@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "prepared": "2026-11-22",
+  "historical_measurement_dates": [
+    "2026-11-09",
+    "2026-11-12",
+    "2026-11-13"
+  ],
+  "beir": {
+    "metric": "nDCG@10",
+    "split_seed": 20261112,
+    "fusion": "0.6 BGE + 0.4 keyword, channel min-max normalization",
+    "measurement": "Offline fusion audit over captured rankings; binary capture column retained separately.",
+    "questions_not_fully_unseen": [
+      "SciFact",
+      "NFCorpus",
+      "FiQA",
+      "SciDocs"
+    ],
+    "rows": [
+      {
+        "dataset": "SciFact",
+        "questions_test": 146,
+        "keyword": 0.6786,
+        "bge": 0.6884,
+        "fused": 0.7271,
+        "binary_fused_capture": 0.7271,
+        "gain_over_keyword_pp": 4.85,
+        "gain_over_keyword_ci95_pp": [
+          1.29,
+          8.62
+        ]
+      },
+      {
+        "dataset": "NFCorpus",
+        "questions_test": 169,
+        "keyword": 0.3037,
+        "bge": 0.3197,
+        "fused": 0.3417,
+        "binary_fused_capture": 0.3412,
+        "gain_over_keyword_pp": 3.8,
+        "gain_over_keyword_ci95_pp": [
+          1.67,
+          6.12
+        ]
+      },
+      {
+        "dataset": "FiQA",
+        "questions_test": 326,
+        "keyword": 0.2535,
+        "bge": 0.4132,
+        "fused": 0.4159,
+        "binary_fused_capture": 0.4159,
+        "gain_over_keyword_pp": 16.24,
+        "gain_over_keyword_ci95_pp": [
+          13.34,
+          19.21
+        ]
+      },
+      {
+        "dataset": "SciDocs",
+        "questions_test": 498,
+        "keyword": 0.1638,
+        "bge": 0.1981,
+        "fused": 0.202,
+        "binary_fused_capture": 0.202,
+        "gain_over_keyword_pp": 3.82,
+        "gain_over_keyword_ci95_pp": [
+          2.81,
+          4.85
+        ]
+      },
+      {
+        "dataset": "ArguAna",
+        "questions_test": 721,
+        "keyword": 0.5015,
+        "bge": 0.5317,
+        "fused": 0.5658,
+        "binary_fused_capture": 0.5649,
+        "gain_over_keyword_pp": 6.43,
+        "gain_over_keyword_ci95_pp": [
+          4.36,
+          8.48
+        ]
+      }
+    ],
+    "report_sha256": "619d88eb88fe5c6d401669bce03f0f05c80cfa8e71dedd35ae0ea7aa753d3b49"
+  },
+  "conversation_retrieval": {
+    "measured": "2026-11-13",
+    "binary_sha256": "87fcfb03a657ee609c1b53c37908192a95537bc0764f63a1f9e8bda2118d4446",
+    "rows": [
+      {
+        "dataset": "LongMemEval_S",
+        "metric": "R_all@5",
+        "questions_scored": 419,
+        "keyword": 0.8663484486873508,
+        "bge": 0.883054892601432,
+        "fused": 0.9212410501193318,
+        "bm25_reference": 0.7422434367541766,
+        "all_evidence_found_top5": 386,
+        "not_held_out": true
+      },
+      {
+        "dataset": "LoCoMo sessions",
+        "metric": "R@5",
+        "questions_scored": 1036,
+        "keyword": 0.8583976833976834,
+        "bge": 0.7263996138996138,
+        "fused": 0.877992277992278,
+        "rrf": 0.855148005148005,
+        "split_seed": 20261105
+      },
+      {
+        "dataset": "LoCoMo turns (categories 1\u20134)",
+        "metric": "R@5",
+        "questions_scored": 784,
+        "keyword": 0.46608240698876957,
+        "bge": 0.49614740647341193,
+        "fused": 0.5767980000441735,
+        "rrf": 0.5583243605883912,
+        "split_seed": 20261105
+      }
+    ],
+    "lme_metrics_sha256": "a4647354e9f6492bad7ebc8a11ffd936437e23fa01f86424b2d90e899c9a1966",
+    "locomo_test_half_sha256": "597dc7c05b2f69da88d57ba866600efc4bdf5297469ea8d8d585ecb92ab42bf1"
+  },
+  "agent_pilot": {
+    "measured": "2026-11-09",
+    "solver": "gpt-6-luna via Codex CLI 0.166.0",
+    "memory_off_resolved": 7,
+    "tasks_scored": 19,
+    "rows": [
+      {
+        "arm": "Lastknown/recall",
+        "tasks_scored": 19,
+        "resolved": 7,
+        "analysis_sha256": "39a93cf739790df0475bf765456d7b6c69a3d5791a48668eb9afbce7b3890a76"
+      },
+      {
+        "arm": "Echo word-overlap baseline",
+        "tasks_scored": 19,
+        "resolved": 9,
+        "analysis_sha256": "e81d3e4c51441a3f34f7bc0961ea5cdcec1acdd4d686747a5733ceeb48bdf3a7"
+      },
+      {
+        "arm": "mem0-noinfer 2.2.1",
+        "tasks_scored": 19,
+        "resolved": 7,
+        "analysis_sha256": "2d60b48a224bbf45b31d25da10ab1d9b102e0c7408c310ba9ea1ffd97a5f9bce"
+      },
+      {
+        "arm": "SimpleMem",
+        "tasks_scored": 19,
+        "resolved": 11,
+        "analysis_sha256": "bffec78fb3d71d16867de73f7b2f999b489ece96f78afa4d9bd0aaba34fe9fbf"
+      },
+      {
+        "arm": "MemoryOS",
+        "tasks_scored": 19,
+        "resolved": 5,
+        "analysis_sha256": "aa66264b343d6a4421891e3e246aad95801a3e349b58c7164cedf903e1cf1e49"
+      }
+    ],
+    "scope": "Small historical pilot, not a product leaderboard; adapter and selected-repeat limits described in EVALUATION.md."
+  },
+  "current_release_check": {
+    "measured": "2026-11-22",
+    "release": "v0.1.0-alpha.1",
+    "source_commit": "81caa4a0c2ab3cbdbed4e32e929b2c3222816238",
+    "dataset": "SciFact",
+    "fresh_documents": 5183,
+    "questions": 300,
+    "channels": 3,
+    "failed": 0,
+    "changed_ranked_lists_vs_nov13": 0,
+    "receipt": "https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/scifact-baseline-20261122.zip"
+  },
+  "limits": [
+    "Retrieval scores are not answer accuracy or evidence of coding-agent improvement.",
+    "Only SciFact was rerun for the November22 alpha; other rows remain historical.",
+    "LoCoMo data is CC BY-NC4.0 and is not redistributed.",
+    "Original private raw runs are not distributed here; this is a curated aggregate snapshot, not a full raw-data release."
+  ]
+}

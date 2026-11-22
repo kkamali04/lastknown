@@ -9,7 +9,7 @@ protocol section before comparing any number with another system's.
 | LongMemEval_S, official 419 questions | R_all@5, fts5+bge fused | **0.921** (386/419) (RRF fusion: 0.905, 379/419) | session-level retrieval, abstain off, whole set, release build; not held-out, see below |
 | LoCoMo, session level | R@5, held-out TEST half | **0.878** (RRF fusion: 0.855) | gain +2.28 points, 95% CI [+1.13, +3.47] |
 | LoCoMo, dialog turn, categories 1-4 | R@5, held-out TEST half | **0.577** (RRF fusion: 0.558) | gain +1.85 points, 95% CI [+0.69, +2.98] |
-| BEIR: SciFact / NFCorpus / FiQA / SciDocs / ArguAna | nDCG@10, held-out TEST half, fts5+bge fused (keyword-only in brackets) | **0.727** (0.679) / **0.342** (0.304) / **0.416** (0.254) / **0.202** (0.164) / **0.566** (0.502) | fused beats keyword-only on all five; gains and caveats below |
+| BEIR: SciFact / NFCorpus / FiQA / SciDocs / ArguAna | nDCG@10, historical TEST halves, fts5+bge fused (keyword-only in brackets) | **0.727** (0.679) / **0.342** (0.304) / **0.416** (0.254) / **0.202** (0.164) / **0.566** (0.502) | fused beats keyword-only on all five; split and binary/offline qualifications below |
 
 ## LongMemEval_S (official 419)
 
@@ -32,8 +32,9 @@ Default against reciprocal-rank fusion on R_all@5: 11 questions gained, 4 lost. 
 one measured on an earlier build that used that fusion by default.
 
 This is **not a held-out number**: the fusion weight was chosen on halves of public sets that included LongMemEval_S
-questions, so the questions scored here were partly seen when the one weight was picked. The LoCoMo and BEIR rows are the
-held-out ones.
+questions, so the questions scored here were partly seen when the one weight was picked. LoCoMo uses a held-out half.
+The BEIR rows use historical TEST halves, but four were not fully unseen when the weight was selected;
+see [the five-set audit qualifications](EVALUATION.md#five-set-beir-audit).
 
 Reproduce (whole set):
 
@@ -117,9 +118,10 @@ It uses the same `BENCH_DATA` and verified qrels as `beir.py`, and reports both 
 
 ## What these numbers do not show
 
-They do not compare recall with other memory systems: published figures for other systems mix protocols and often use an LLM
-reader. They also say nothing about answerability (knowing when no answer exists), which recall does not claim to solve; see the
-README's "What it doesn't do".
+These retrieval tables do not compare recall with other memory systems: published figures for other systems mix protocols and often use an LLM
+reader. A separate small coding-agent pilot did compare memory adapters, without establishing an overall winner; see the
+[evaluation inventory](EVALUATION.md#coding-agent-memory-comparison). Retrieval scores also say nothing about dependable
+answerability (knowing when no answer exists); see [known limits](LIMITS.md).
 
 The BEIR sets are public corpora of clean, single-topic documents. No public, repeatable benchmark of a personal notes
 folder exists here, so the fused-over-keyword gain has not been shown on one, and a messy real vault may see less.
