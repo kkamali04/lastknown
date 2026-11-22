@@ -48,7 +48,7 @@ def main():
         parser.error("license inventory does not match the target and committed Cargo.lock")
     # Canonical committed bytes, without .git, untracked files, CRLF conversion, or caches.
     files, modes = {}, {}
-    with tarfile.open(fileobj=io.BytesIO(git("archive", "--format=tar", "HEAD"))) as archive:
+    with tarfile.open(fileobj=io.BytesIO(git("-c", "core.autocrlf=false", "-c", "core.eol=lf", "archive", "--format=tar", "HEAD"))) as archive:
         for member in archive:
             if member.isdir():
                 continue
