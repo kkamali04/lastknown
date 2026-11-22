@@ -1,0 +1,30 @@
+# Known-synthetic values only, each reviewed by hand (see the commit message).
+# gitleaks 8.30 does not apply condition="AND" between paths and regexes in a global allowlist
+# (a path match alone suppresses the finding - tested), so the fixtures are allowlisted by their
+# EXACT value instead of by file: a new secret anywhere, scrub.rs and the installers included, still fails.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "synthetic test fixtures and public benchmark data"
+paths = [
+  '''ingest/test_memcap\.py''',
+  '''ingest/test_scrub_turns\.py''',
+  '''bench/results/.*\.jsonl''',
+]
+
+# src/scrub.rs unit-test canaries: the jwt.io sample token, the Stripe docs sample key, placeholder passwords.
+# Installer pins: SHA-256 checksums of the public bge model files (scripts/install.ps1 / install.sh).
+[[allowlists]]
+description = "scrub.rs test canaries and installer model checksums (exact values)"
+regexTarget = "secret"
+regexes = [
+  '''\.dBjftJeZ4CVPmB92K27uhbUJU1p1r$''',
+  '''^12345678$''',
+  '''^abc123def456$''',
+  '''^hunter2xyz$''',
+  '''^whsec_9f8e7d6c5b4a3$''',
+  '''^9261e7d79b44c8195c1cada2b453e55b00aeb81e907a6664974b4d7776172ab3$''',
+  '''^b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3$''',
+  '''^d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66$''',
+]

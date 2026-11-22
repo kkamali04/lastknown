@@ -1,0 +1,5 @@
+# Shell scripts must keep LF or `sh` fails with "\r: command not found" on Linux/macOS.
+*.sh text eol=lf
+# Preserve verbatim upstream notice bytes and their manifest checksums.
+licenses/** -text
+Cargo.lock text eol=lf

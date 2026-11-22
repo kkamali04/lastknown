@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>recall</title>
+<style>
+:root{
+  --ink:#0f1218;--drawer:#171b23;--drawer2:#1d222c;--rule:#2a303c;
+  --paper:#e8e3d6;--muted:#8d93a1;--brass:#d4a24c;--sage:#7fb58f;--rust:#d9844f;--brick:#e5605b;
+  --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Mono","Cascadia Code",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--ink);color:var(--paper);font:14px/1.5 var(--sans)}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button,input,select{font:inherit;color:inherit}
+.mono,.num{font-family:var(--mono)}
+.muted{color:var(--muted)}.ok{color:var(--sage)}.warn{color:var(--rust)}.bad{color:var(--brick)}
+
+/* masthead */
+.mast{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.word{font:600 15px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.word span{color:var(--brass)}
+.where{font:12px var(--mono);color:var(--muted)}
+.pill{margin-left:auto;font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px;display:inline-flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.pill.up .dot{background:var(--sage)}.pill.down .dot{background:var(--rust)}
+
+/* thesis: one plain sentence + the coverage ruler */
+.thesis{padding:26px 0 8px}
+.thesis p{font:400 clamp(20px,3.2vw,28px)/1.35 var(--serif);margin:0;max-width:30em}
+.thesis b{font:500 .82em var(--mono);color:var(--brass);white-space:nowrap}
+.ruler{margin:18px 0 4px;display:grid;grid-template-columns:repeat(100,minmax(0,1fr));gap:1px;height:22px;align-items:end;overflow:hidden}
+.ruler i{display:block;height:9px;background:var(--rule)}
+.ruler i:nth-child(10n){height:16px}.ruler i:nth-child(50n){height:22px}
+.ruler i.on{background:var(--brass)}
+.ruler-legend{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted)}
+
+/* tabs */
+nav{display:flex;gap:2px;margin:22px 0 18px;border-bottom:1px solid var(--rule);overflow-x:auto}
+nav button{background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--paper);border-bottom-color:var(--brass)}
+nav button .badge{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brass);margin-left:6px;vertical-align:middle}
+[role=tabpanel][hidden]{display:none}
+
+/* panels */
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.cols>*{min-width:0}
+.box{overflow-x:auto}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.box{background:var(--drawer);border:1px solid var(--rule);border-radius:10px;padding:16px}
+.box+.box{margin-top:16px}
+h2{font:500 17px/1.2 var(--serif);margin:0 0 12px}
+h2 small{font:12px var(--sans);color:var(--muted);margin-left:8px}
+.facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 14px;margin:0}
+.facts dt{color:var(--muted);font-size:13px;white-space:nowrap}.facts dd{margin:0;overflow-wrap:anywhere}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--muted);padding:0 8px 6px;border-bottom:1px solid var(--rule)}
+td{padding:7px 8px;border-bottom:1px solid #20252f}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.empty{color:var(--muted);font-size:13px;padding:10px 0}
+.loading{color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.loading{animation:breathe 1.4s ease-in-out infinite}}
+@keyframes breathe{50%{opacity:.45}}
+.err{border-left:2px solid var(--brick);padding:4px 10px;margin:6px 0;font-size:12.5px;word-break:break-word}
+.err .mono{color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);margin-top:14px}
+.foot summary{cursor:pointer}
+
+/* search */
+.qrow{display:flex;gap:8px;flex-wrap:wrap}
+.qrow input[type=search]{flex:1 1 280px}
+input[type=search],input[type=text],input[type=number]{background:var(--ink);border:1px solid var(--rule);border-radius:7px;padding:9px 11px;min-width:0}
+input::placeholder{color:#5f6675}
+.btn{background:var(--brass);color:#1a1405;border:0;border-radius:7px;padding:9px 16px;font-weight:600;cursor:pointer}
+.btn.quiet{background:none;color:var(--paper);border:1px solid var(--rule);font-weight:500}
+.btn:disabled{opacity:.45;cursor:default}
+.meta{font:12px var(--mono);color:var(--muted);margin:12px 0 4px}
+.card{border-top:1px solid var(--rule);padding:14px 0}
+.card h3{font:500 17px/1.3 var(--serif);margin:0 0 3px}
+.card .path{font:12px var(--mono);color:var(--muted);word-break:break-all}
+.card .snip{margin:7px 0 0;max-width:72ch}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{font:11.5px var(--mono);border:1px solid var(--rule);border-radius:5px;padding:1px 7px;color:var(--muted)}
+.chip.warn{color:var(--rust);border-color:#5a3a26}.chip.bad{color:var(--brick);border-color:#5c2a28}
+.banner{border:1px solid #5a3a26;background:#211810;color:var(--rust);border-radius:8px;padding:9px 12px;margin:10px 0}
+pre.fail{white-space:pre-wrap;font:12.5px var(--mono);color:var(--brick);background:#1e1214;border:1px solid #4a2426;border-radius:8px;padding:10px 12px}
+
+/* settings */
+.group+.group{margin-top:22px}
+.group h3{font:600 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin:0 0 6px}
+.set{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:6px 18px;padding:12px 0;border-top:1px solid var(--rule)}
+@media (max-width:640px){.set{grid-template-columns:1fr}}
+.set label{font-weight:500}.set .why{font-size:12.5px;color:var(--muted);margin-top:2px}
+.set .key{font:11px var(--mono);color:#5f6675}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ctl input{flex:1 1 160px}
+.msg{font-size:12px;min-height:1em;flex-basis:100%}
+.switch{position:relative;width:42px;height:24px;flex:none}
+.switch input{opacity:0;position:absolute;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:12px;background:var(--rule);transition:background .15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--paper);transition:transform .15s}
+.switch input:checked+span{background:var(--sage)}.switch input:checked+span::after{transform:translateX(18px)}
+.switch input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+
+/* setup: a real sequence, so it is numbered */
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.step{position:relative;padding:0 0 22px 44px;counter-increment:s}
+.step::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;border:1px solid var(--rule);display:grid;place-items:center;font:13px var(--mono);color:var(--muted)}
+.step::after{content:"";position:absolute;left:14px;top:30px;bottom:4px;width:1px;background:var(--rule)}
+.step:last-child::after{display:none}
+.step.done::before{background:var(--sage);border-color:var(--sage);color:var(--ink);content:"✓"}
+.step.now::before{border-color:var(--brass);color:var(--brass)}
+.step h3{font:500 16px var(--serif);margin:3px 0 6px}
+.step[aria-disabled=true]{opacity:.5}
+.preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--drawer2);border-radius:8px;padding:10px 12px}
+.stat b{display:block;font:500 20px var(--mono);color:var(--paper)}.stat span{font-size:12px;color:var(--muted)}
+.log{font:12px var(--mono);color:var(--muted);background:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:10px;max-height:180px;overflow:auto;white-space:pre-wrap}
+.bar{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--brass);width:0;transition:width .3s}
+</style>
+</head>
+<body>
+<main>
+<header class="mast">
+  <div class="word">re<span>call</span></div>
+  <div class="where">local only · 127.0.0.1</div>
+  <div id="daemon" class="pill"><span class="dot"></span><span>daemon …</span></div>
+</header>
+
+<section class="thesis" aria-live="polite">
+  <p id="sentence" class="loading">Reading your library…</p>
+  <div id="ruler" class="ruler" aria-hidden="true"></div>
+  <div class="ruler-legend"><span>0%</span><span id="ruler-label">searchable by meaning</span><span>100%</span></div>
+</section>
+
+<nav role="tablist">
+  <button role="tab" id="t-overview" aria-controls="p-overview" aria-selected="true">Overview</button>
+  <button role="tab" id="t-search" aria-controls="p-search" aria-selected="false">Search</button>
+  <button role="tab" id="t-settings" aria-controls="p-settings" aria-selected="false">Settings</button>
+  <button role="tab" id="t-setup" aria-controls="p-setup" aria-selected="false">Set up</button>
+</nav>
+
+<section role="tabpanel" id="p-overview" aria-labelledby="t-overview">
+  <div class="cols">
+    <div>
+      <div class="box"><h2>Index runs <small>newest first</small></h2><div id="runs" class="loading">Loading…</div></div>
+      <div class="box"><h2>Recent errors</h2><div id="errs" class="loading">Loading…</div></div>
+    </div>
+    <div>
+      <div class="box"><h2>Freshness</h2><dl id="fresh" class="facts loading"><dt>Loading…</dt><dd></dd></dl></div>
+      <div class="box"><h2>Library</h2><dl id="lib" class="facts loading"><dt>Loading…</dt><dd></dd></dl></div>
+    </div>
+  </div>
+  <details class="foot"><summary>What recall does not record yet</summary><ul id="missing"></ul></details>
+  <p class="foot" id="updated"></p>
+</section>
+
+<section role="tabpanel" id="p-search" aria-labelledby="t-search" hidden>
+  <div class="box">
+    <form id="qf" class="qrow">
+      <input id="q" type="search" placeholder="Ask your notes something" autocomplete="off" aria-label="Search text">
+      <input id="ch" type="text" placeholder="channels (default)" aria-label="Channels" style="flex:0 1 170px">
+      <input id="top" type="number" min="1" max="50" value="10" aria-label="How many results" style="width:76px">
+      <button class="btn" id="go">Search</button>
+    </form>
+    <div id="results"><p class="empty">Results show the same answer as <span class="mono">recall query</span>, with private text blanked out.</p></div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p-settings" aria-labelledby="t-settings" hidden>
+  <div class="box" id="settings"><p class="loading">Loading settings…</p></div>
+</section>
+
+<section role="tabpanel" id="p-setup" aria-labelledby="t-setup" hidden>
+  <div class="box">
+    <ol class="steps">
+      <li class="step now" id="s1"><h3>Pick your notes folder</h3>
+        <p class="muted">recall reads Markdown (.md, .qmd) in one folder and everything below it.</p>
+        <form id="f1" class="qrow"><input id="folder" type="text" placeholder="C:\Users\you\Documents\Notes" aria-label="Notes folder"><button class="btn">Scan folder</button></form>
+        <div id="m1" class="msg"></div></li>
+      <li class="step" id="s2" aria-disabled="true"><h3>Check what will be indexed</h3>
+        <p class="muted">Counted on disk with the same rules <span class="mono">recall index</span> uses. Nothing is written.</p>
+        <div id="scan"></div></li>
+      <li class="step" id="s3" aria-disabled="true"><h3>Choose what stays private</h3>
+        <p class="muted">Blanking happens before anything is shown. Leave these on unless you have a reason.</p>
+        <div id="privacy"></div></li>
+      <li class="step" id="s4" aria-disabled="true"><h3>Build the index</h3>
+        <p class="muted">Indexes the folder, then computes meaning vectors on this PC. No internet, no AI service.</p>
+        <button class="btn" id="build" disabled>Start indexing</button>
+        <div id="job"></div></li>
+    </ol>
+  </div>
+</section>
+</main>
+<script>
+"use strict";
+const T = new URLSearchParams(location.search).get("t") || "";
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = String(text); return e; }
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? { headers: { "X-Recall-Token": T } }
+    : { method: "POST", headers: { "X-Recall-Token": T, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ error: "HTTP " + r.status }));
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+const n = x => Number(x).toLocaleString();
+function dur(s) {
+  if (s === null || s === undefined) return "—";
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? d + "d " + h + "h" : h ? h + "h " + m + "m" : m ? m + "m" : s + "s";
+}
+function facts(dl, rows) {
+  dl.classList.remove("loading"); dl.replaceChildren();
+  for (const [k, v, cls] of rows) dl.append(el("dt", "", k), el("dd", cls || "", v));
+}
+function sentence(parts) { // [text, isNumber]...
+  const p = $("sentence"); p.classList.remove("loading"); p.replaceChildren();
+  for (const [t, num] of parts) p.append(num ? el("b", "", t) : document.createTextNode(t));
+}
+
+/* tabs */
+const tabs = [...document.querySelectorAll("[role=tab]")];
+function show(id) {
+  for (const t of tabs) { const on = t.id === id; t.setAttribute("aria-selected", on); $(t.getAttribute("aria-controls")).hidden = !on; }
+}
+tabs.forEach(t => t.onclick = () => show(t.id));
+for (let i = 0; i < 100; i++) $("ruler").append(el("i"));
+
+/* overview */
+let firstRun = null;
+async function loadStatus() {
+  try {
+    const s = await api("/api/status");
+    const pill = $("daemon"); pill.className = "pill " + (s.daemon === "up" ? "up" : "down");
+    pill.lastChild.textContent = s.daemon === "up" ? "daemon running" : "daemon off";
+    const st = s.store;
+    if (!st) {
+      sentence([["No library yet. ", false], ["Set up", true], [" takes about two minutes.", false]]);
+      if (firstRun === null) { firstRun = true; show("t-setup"); $("t-setup").append(el("span", "badge")); }
+      $("lib").classList.remove("loading"); facts($("lib"), [["Database", s.store_error, "bad"], ["Notes folder", s.vault + " (" + s.vault_source + ")"]]);
+      return;
+    }
+    firstRun = false;
+    const pct = st.coverage_pct;
+    sentence([[n(st.docs_valid), true], [" notes indexed, ", false], [pct.toFixed(1) + "%", true], [" searchable by meaning.", false]]);
+    [...$("ruler").children].forEach((t, i) => t.classList.toggle("on", i < Math.round(pct)));
+    facts($("lib"), [["Notes folder", s.vault, "mono"], ["Set by", { env: "RECALL_VAULT", settings: "Settings", default: "default (not set)" }[s.vault_source] || s.vault_source],
+      ["Notes (all versions)", n(st.docs_total), "num"], ["Retired", n(st.superseded), "num"], ["Database size", st.db_size_mb.toFixed(1) + " MB", "num"],
+      ["Version", s.version + " · wire " + s.wire_proto, "mono"]]);
+  } catch (e) { sentence([["Could not read status: " + e.message, false]]); }
+}
+async function loadActivity() {
+  try {
+    const a = await api("/api/activity");
+    const r = a.refresh, d = a.daemon, st = a.stale;
+    const staleN = st ? st.changed + st.deleted + st.new_pending : 0;
+    facts($("fresh"), [
+      ["Next refresh", r.next_due ? (r.next_due_in_s ? "in " + dur(r.next_due_in_s) : "due now") : "when files change", r.next_due_in_s === 0 ? "warn" : ""],
+      ["Schedule", r.setting],
+      ["Last refresh", r.last_ok || "never"],
+      ["Last result", r.last_summary || "—"],
+      ["Waiting for re-index", st ? (staleN ? st.changed + " changed · " + st.deleted + " deleted · " + st.new_pending + " new" : "nothing, all current") : (a.stale_error || "unknown"), st ? (staleN ? "warn" : "ok") : "bad"],
+      ["Embeds queued", r.pending_embed ? n(r.pending_embed) : "none", r.pending_embed ? "warn" : ""],
+      ["Daemon uptime", d.up ? dur(d.uptime_s) : "not running", d.up ? "" : "warn"],
+    ]);
+    if (a.refresh_state_error) facts($("fresh"), [["Refresh state", a.refresh_state_error, "bad"]]);
+    const runs = $("runs"); runs.classList.remove("loading"); runs.replaceChildren();
+    if (a.index_runs && a.index_runs.length) {
+      const t = el("table"), h = el("tr");
+      [["When", ""], ["Files seen", "n"], ["Removed", "n"], ["Scan time", "n"], ["Scanner", ""]].forEach(([x, c]) => h.append(el("th", c, x)));
+      t.append(h);
+      for (const x of a.index_runs) {
+        const tr = el("tr");
+        tr.append(el("td", "mono", x.ran_at), el("td", "n", n(x.files_seen)), el("td", "n", n(x.tombstoned)),
+          el("td", "n", x.enum_ms === null ? "—" : (x.enum_ms / 1000).toFixed(1) + " s"), el("td", x.walk_fallback ? "warn" : "muted", x.walk_fallback ? "slow walk" : "ripgrep"));
+        t.append(tr);
+      }
+      runs.append(t);
+    } else runs.append(el("p", a.index_runs_error ? "bad" : "empty", a.index_runs_error || "No index runs yet. Run Set up, or `recall index`."));
+    const errs = $("errs"); errs.classList.remove("loading"); errs.replaceChildren();
+    if (!a.errors.length) errs.append(el("p", "empty", "No errors logged."));
+    for (const e of a.errors) { const b = el("div", "err"); b.append(el("div", "mono", (e.ts || "") + " · " + (e.context || "")), el("div", "", e.error || "")); errs.append(b); }
+    $("missing").replaceChildren(...a.not_recorded.map(t => el("li", "", t)));
+    $("updated").textContent = "Updated " + a.now + ". Refreshes every 10 seconds while this tab is open.";
+  } catch (e) { $("runs").replaceChildren(el("p", "bad", e.message)); }
+}
+
+/* search */
+$("qf").onsubmit = async ev => {
+  ev.preventDefault();
+  const q = $("q").value.trim(); if (!q) { $("q").focus(); return; }
+  const out = $("results"), go = $("go"); go.disabled = true; out.replaceChildren(el("p", "loading", "Searching…"));
+  try {
+    const r = await api("/api/query", { q, top: Number($("top").value) || 10, channels: $("ch").value.trim() });
+    out.replaceChildren(el("div", "meta", "answered " + (r.path === "daemon" ? "by the daemon" : "in-process") + " in " + n(r.ms) + " ms"));
+    if (!r.ok) { out.append(el("pre", "fail", r.error || "The search failed.")); go.disabled = false; return; }
+    const hits = Array.isArray(r.hits) ? r.hits : [];
+    if (r.closest_labels && hits.some(h => h.closest_match)) out.append(el("div", "banner", "No confident match. These are the closest notes, not answers."));
+    if (hits.length && (hits[0].absent || []).length) out.append(el("div", "meta", "Not in any of your notes: " + hits[0].absent.join(", ") + ". These are the nearest matches."));
+    if (!hits.length) out.append(el("p", "empty", "Nothing matched. Try fewer or different words."));
+    for (const h of hits) {
+      const c = el("article", "card");
+      c.append(el("h3", "", (h.rank + 1) + ". " + (h.title || h.vault_path || "Untitled")));
+      if (h.vault_path) c.append(el("div", "path", h.vault_path));
+      if (h.snippet) c.append(el("p", "snip", h.snippet.replace(/\s+/g, " ")));
+      const chips = el("div", "chips");
+      chips.append(el("span", "chip", h.source));
+      for (const [k, v] of Object.entries(h.scores || {})) chips.append(el("span", "chip", k + " " + Number(v).toFixed(3)));
+      // h.rrf is always the RRF sum, whatever ordered the list (convex fusion, a reranker, a daemon
+      // with its own env), so it is shown as a reference number and never called the ranking.
+      const rr = el("span", "chip", "rank-sum " + Number(h.rrf).toFixed(4));
+      rr.title = "Reference only: the sum of 1/(k + rank + 1) (rank counted from 0) over the channels that found this note. Results may be ordered by weighted-score fusion or a reranker instead.";
+      chips.append(rr);
+      if (r.closest_labels && h.closest_match) chips.append(el("span", "chip warn", "closest match"));
+      if (h.deleted) chips.append(el("span", "chip bad", "file deleted"));
+      else if (h.stale === true) chips.append(el("span", "chip warn", "changed since indexed"));
+      if (h.lacks && h.lacks.length) chips.append(el("span", "chip", "missing: " + h.lacks.join(", ")));
+      c.append(chips); out.append(c);
+    }
+    if (r.notes) out.append(el("div", "meta", r.notes));
+  } catch (e) { out.replaceChildren(el("pre", "fail", e.message)); }
+  go.disabled = false;
+};
+
+/* settings, grouped and described in plain words */
+const SETTINGS = [
+  ["Library", [["vault", "Notes folder", "The one folder recall indexes. RECALL_VAULT overrides it when set."]]],
+  ["Schedule", [
+    ["refresh", "Refresh", "nightly, on-change, or every N minutes / hours."],
+    ["nightly_at_utc", "Nightly time (UTC)", "HH:MM. 07:00 UTC is 2-3 AM US Eastern."],
+    ["freshness_check", "Flag changed files", "lazy marks results whose file changed since indexing; off skips the check."]]],
+  ["Ranking", [
+    ["stale_penalty", "Demote changed files", "Rank positions a changed file drops. 0 is off."],
+    ["recency_boost", "Favour recent files", "Rank positions the newest file can gain. 0 is off."]]],
+  ["Privacy", [
+    ["scrub.secrets", "Blank out secrets", "API keys, tokens, passwords in links.", true],
+    ["scrub.pii", "Blank out personal details", "Emails, phone numbers, card numbers, IP addresses.", true],
+    ["scrub.store_redacted", "Store notes already blanked", "Applies at the next index; the database never holds the raw text.", true],
+    ["scrub.custom", "Your own private words", "Names or terms to always blank. Hidden once saved."]]],
+];
+function settingRow(meta, r, onSaved) {
+  const [key, label, why, isSwitch] = meta;
+  const row = el("div", "set"), left = el("div"), ctl = el("div", "ctl"), msg = el("div", "msg");
+  left.append(el("label", "", label), el("div", "why", why), el("div", "key", key));
+  const save = async v => {
+    msg.className = "msg muted"; msg.textContent = "Saving…";
+    try { const o = await api("/api/settings", { key, value: v }); msg.className = "msg ok"; msg.textContent = "Saved: " + o.value; if (onSaved) onSaved(o); return o; }
+    catch (e) { msg.className = "msg bad"; msg.textContent = e.message; throw e; }
+  };
+  if (isSwitch) {
+    const sw = el("label", "switch"), inp = el("input"); inp.type = "checkbox"; inp.checked = r.value === "on"; inp.setAttribute("aria-label", label);
+    sw.append(inp, el("span")); inp.onchange = () => save(inp.checked ? "on" : "off").catch(() => { inp.checked = !inp.checked; });
+    ctl.append(sw);
+  } else {
+    const inp = el("input"); inp.type = "text"; inp.setAttribute("aria-label", label);
+    const btn = el("button", "btn quiet", "Save");
+    if (r.masked) { inp.placeholder = r.value + " · type a JSON list to replace, [] to clear"; btn.disabled = true; inp.oninput = () => { btn.disabled = !inp.value.trim(); }; }
+    else inp.value = r.value;
+    btn.onclick = () => save(inp.value).then(o => { if (r.masked) { inp.value = ""; inp.placeholder = o.value + " · type a JSON list to replace, [] to clear"; btn.disabled = true; } else inp.value = o.value; }).catch(() => {});
+    inp.onkeydown = e => { if (e.key === "Enter" && !btn.disabled) btn.click(); };
+    ctl.append(inp, btn);
+  }
+  ctl.append(msg); row.append(left, ctl); return row;
+}
+async function loadSettings() {
+  const box = $("settings");
+  try {
+    const s = await api("/api/settings"), by = Object.fromEntries(s.settings.map(r => [r.key, r]));
+    box.replaceChildren();
+    for (const [name, rows] of SETTINGS) {
+      const g = el("div", "group"); g.append(el("h3", "", name));
+      for (const m of rows) if (by[m[0]]) g.append(settingRow(m, by[m[0]]));
+      if (name === "Ranking") { const f = el("div", "set"), l = el("div"); l.append(el("label", "", "Fusion"), el("div", "why", s.fusion.note)); f.append(l, el("div", "mono", s.fusion.mode)); g.append(f); }
+      box.append(g);
+    }
+    box.append(el("p", "foot", "Saved to " + s.file + ". The daemon picks changes up within 30 seconds."));
+    renderPrivacy(by);
+  } catch (e) { box.replaceChildren(el("p", "bad", e.message)); }
+}
+
+/* setup */
+function stepState(id, state) { const s = $(id); s.classList.remove("now", "done"); if (state) s.classList.add(state); s.setAttribute("aria-disabled", state ? "false" : "true"); }
+function stat(v, label) { const d = el("div", "stat"); d.append(el("b", "", v), el("span", "", label)); return d; }
+let scanned = null, vendorSkip = [], scanSeq = 0;
+function invalidateScan() { scanned = null; scanSeq++; $("build").disabled = true; $("scan").replaceChildren(); stepState("s2", null); }
+$("folder").oninput = invalidateScan;
+$("f1").onsubmit = async ev => {
+  ev.preventDefault();
+  const folder = $("folder").value.trim(); if (!folder) { $("folder").focus(); return; }
+  invalidateScan(); const mine = scanSeq;
+  $("m1").className = "msg muted"; $("m1").textContent = "Scanning… large folders take a few seconds.";
+  try {
+    const p = await api("/api/setup/scan", { folder });
+    if (mine !== scanSeq) return; // a newer scan or an edit replaced this one
+    scanned = folder; $("m1").textContent = "";
+    stepState("s1", "done"); stepState("s2", "done"); stepState("s3", "now"); stepState("s4", "now");
+    const box = $("scan"), g = el("div", "preview");
+    g.append(stat(n(p.will_index), "notes will be indexed"), stat(n(p.excluded_total), "skipped by exclude rules"),
+      stat(n(p.other_files), "other files (not read)"), stat(p.will_index_mb.toFixed(1) + " MB", "of notes"));
+    box.append(g);
+    if (p.hidden_by_ignore) box.append(el("div", "banner", n(p.hidden_by_ignore) + " of " + n(p.notes_on_disk) + " notes on disk are hidden by .gitignore rules (this folder's or a parent folder's) and will NOT be indexed. Check the .gitignore files above this folder."));
+    if (p.too_large) box.append(el("p", "warn", n(p.too_large) + " notes are over " + n(p.too_large_kb) + " KB and will be skipped (index ignores very large files)."));
+    if (p.truncated) box.append(el("p", "warn", "Stopped counting at " + n(p.scanned) + " files; the numbers are a lower bound, and hidden-note checks were skipped."));
+    const two = el("div", "cols");
+    const ex = el("div"); ex.append(el("h3", "muted", "Skipped folders"));
+    if (p.excluded.length) { const t = el("table"); for (const x of p.excluded) { const tr = el("tr"); tr.append(el("td", "mono", x.pattern), el("td", "n", n(x.files))); t.append(tr); } ex.append(t); }
+    else ex.append(el("p", "empty", "Nothing skipped."));
+    const ty = el("div"); ty.append(el("h3", "muted", "File types found"));
+    const t2 = el("table"); for (const x of p.types) { const tr = el("tr"); tr.append(el("td", "mono", x.ext), el("td", "n", n(x.files)), el("td", x.indexed ? "ok" : "muted", x.indexed ? "indexed" : "not read")); t2.append(tr); } ty.append(t2);
+    two.append(ex, ty); box.append(two);
+    box.append(el("p", "foot", "Hidden folders and anything listed in a .gitignore are never read."));
+    vendorSkip = [];
+    if (p.vendor.length) {
+      const v = el("div", "box"); v.style.marginTop = "12px";
+      v.append(el("h3", "warn", "Code folders that would be indexed"), el("p", "muted", "These hold library docs, not your notes. Ticked ones are added to ~/.recall/exclude.txt when you start."));
+      for (const x of p.vendor) {
+        const lab = el("label", "ctl"), cb = el("input"); cb.type = "checkbox"; cb.checked = true; vendorSkip.push(x.pattern);
+        cb.onchange = () => { vendorSkip = cb.checked ? [...new Set([...vendorSkip, x.pattern])] : vendorSkip.filter(y => y !== x.pattern); };
+        lab.append(cb, el("span", "mono", x.pattern), el("span", "muted", n(x.files) + " notes")); v.append(lab);
+      }
+      box.append(v);
+    }
+    if (p.rg_missing) box.append(el("p", "warn", "ripgrep is not installed, so indexing will use the slower built-in walk."));
+    $("build").disabled = p.will_index === 0;
+    if (p.will_index === 0) box.append(el("p", "warn", "No Markdown notes found here. Pick the folder that holds your .md files."));
+  } catch (e) { if (mine === scanSeq) { $("m1").className = "msg bad"; $("m1").textContent = e.message; } }
+};
+function renderPrivacy(by) {
+  const box = $("privacy"); box.replaceChildren();
+  for (const m of SETTINGS[3][1].slice(0, 3)) if (by[m[0]]) box.append(settingRow(m, by[m[0]], loadSettingsSoon));
+}
+let settingsTimer; function loadSettingsSoon() { clearTimeout(settingsTimer); settingsTimer = setTimeout(loadSettings, 300); }
+$("build").onclick = async () => {
+  $("build").disabled = true;
+  try { await api("/api/setup/start", { folder: scanned, skip: vendorSkip }); pollJob(); }
+  catch (e) { $("job").replaceChildren(el("pre", "fail", e.message)); $("build").disabled = false; }
+};
+async function pollJob() {
+  let j;
+  try { j = await api("/api/setup/job"); } catch (e) { $("job").replaceChildren(el("pre", "fail", e.message)); return; }
+  if (j.state === "idle") return;
+  const box = $("job"); box.replaceChildren();
+  const done = j.steps.filter(s => s.state === "done").length, bar = el("div", "bar"), fill = el("i");
+  fill.style.width = (j.state === "done" ? 100 : Math.round(done / j.steps.length * 100 + 100 / j.steps.length / 3)) + "%"; bar.append(fill);
+  box.append(bar);
+  const t = el("table"); for (const s of j.steps) { const tr = el("tr"); tr.append(el("td", "", s.name), el("td", { done: "ok", running: "warn", failed: "bad" }[s.state] || "muted", s.state), el("td", "n", s.ms === null ? "" : (s.ms / 1000).toFixed(1) + " s")); t.append(tr); }
+  box.append(t);
+  if (j.lines.length) box.append(el("div", "log", j.lines.join("\n")));
+  if (j.state === "running") { stepState("s4", "now"); setTimeout(pollJob, 1500); return; }
+  if (j.state === "done") { stepState("s3", "done"); stepState("s4", "done"); box.append(el("p", "ok", "Done. Your notes are searchable.")); loadStatus(); loadActivity(); }
+  if (j.state === "failed") { box.append(el("pre", "fail", j.error || "A step failed; the log above says why.")); $("build").disabled = false; }
+}
+
+loadStatus(); loadActivity(); loadSettings(); pollJob();
+setInterval(() => { if (!document.hidden) { loadStatus(); loadActivity(); } }, 10000);
+</script>
+</body>
+</html>

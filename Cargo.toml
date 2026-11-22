@@ -1,0 +1,116 @@
+[package]
+name = "recall"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Local-first cross-platform brain memory — FTS5 + in-process BGE vectors + graph + rg fusion, warm daemon, fully offline."
+
+# cogent-cargo-dep-verify: ALL versions below were verified against crates.io
+# before this template was written. Run `cargo search <crate>` to re-verify
+# before pinning a different version.
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+libloading = "0.9"
+rusqlite = { version = "0.32", features = ["bundled", "hooks"] }
+tokio = { version = "1", features = ["full"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem", "Win32_Foundation", "Win32_System_Threading", "Win32_System_Console"] }
+# In-process BGE-small embeddings (BAAI/bge-small-en-v1.5, 384-dim). CPU-only,
+# offline after first model fetch.
+#
+# ort-load-dynamic (NOT the default download-binaries): ONNX Runtime is loaded
+# from onnxruntime.dll at RUNTIME instead of statically linked. The default
+# static link fails on this box because the prebuilt ORT libs reference MSVC-STL
+# symbols newer than the installed VS2019 toolset (MSVC 14.29). Dynamic loading
+# sidesteps the link entirely. We pin ORT_DYLIB_PATH at startup so it loads the
+# DLL shipped next to recall.exe, never the stale System32\onnxruntime.dll.
+#
+# ZERO-CLOUD: hf-hub-native-tls REMOVED. We use try_new_from_user_defined which
+# reads model bytes directly from the local snapshot directory — hf-hub, ureq,
+# native-tls, and reqwest are not compiled in at all. The binary is incapable of
+# any outbound TLS connection for model download.
+fastembed = { version = "5.14", default-features = false, features = ["ort-load-dynamic"] }
+
+# ort, pinned EXACTLY to the version fastembed already pulls in, so cargo unifies them into one
+# copy. Two different `ort` versions in one binary means two ONNX Runtime environments and two
+# sets of provider registrations, and the one fastembed uses would not be the one we configured.
+#
+# No extra feature is needed for DirectML: `DirectML::register` is gated on
+# `any(feature = "load-dynamic", feature = "directml")`, and load-dynamic is already on via
+# fastembed. Adding the `directml` feature would link ort-sys against a DirectML build at COMPILE
+# time, which is the opposite of what load-dynamic buys us — the DLL stays swappable at runtime.
+half = "2"
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["load-dynamic", "half"] }
+
+# The SAME tokenizer crate fastembed already pulls in (0.22.2 is pinned in Cargo.lock by
+# fastembed itself, so cargo unifies to one copy — this adds no build cost and no new code).
+#
+# Why a DIRECT dependency and a SECOND tokenizer instance: fastembed configures its tokenizer
+# with `with_truncation(max_length: 512)` (fastembed-5.14.0/src/common.rs:108, DEFAULT_MAX_LENGTH
+# in src/text_embedding/mod.rs:6). That is correct for embedding and useless for CHUNKING —
+# asking it how long a document is would return 512 for every document over 512 tokens, which is
+# precisely the measurement the chunker needs to be right about. This instance is loaded from the
+# same tokenizer.json with truncation and padding OFF.
+tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+sha2 = "0.10"
+# Already in the lock via tokenizers; scrub.rs is the only direct user.
+regex = "1"
+# Already in the lock (0.3.4, transitive); `recall ui`'s per-launch token. MIT OR Apache-2.0,
+# read from the crate's own LICENSE-MIT / LICENSE-APACHE files.
+getrandom = "0.3"
+
+# Filesystem change watcher for the daemon (freshness tracking). Cross-platform: ReadDirectoryChangesW
+# on Windows, inotify on Linux, FSEvents on macOS. Licence verified from the crate's own LICENSE file.
+notify = { version = "8", default-features = false, features = ["macos_fsevent"] }
+
+# SECURITY GATE: no secret-reading crates (dotenv, envy, config)
+# are permitted here. All secrets MUST be loaded via `cogent secrets get`.
+# If you add a dep that reads env-vars for secrets, the build gate will fail.
+
+# ANN index: HNSW graph for approximate nearest-neighbor vector search.
+# Gated behind the `ann` feature — not included in the default build.
+# cogent-cargo-dep-verify: hnsw_rs 0.3.4 verified on crates.io 2026-05-30.
+# Scalar build only (no simdeez_f / stdsimd) to avoid MSVC 14.29 link issues.
+[dependencies.hnsw_rs]
+version = "0.3.4"
+optional = true
+
+[features]
+# default = [] — exact brute-force BGE scan is the default until the recall@depth
+# gate is green. Flip to default = ["ann"] in a later commit.
+default = []
+ann = ["dep:hnsw_rs"]
+# voyage: query-embed via Voyage REST for the embeddings2 (1024-dim) channel.
+# Cache-first: most queries hit the local SQLite cache and make NO network call.
+voyage = ["dep:ureq"]
+# gemini: query-embed via Vertex AI for the embeddings4 (3072-dim) channel.
+# Auth is Application Default Credentials, so it bills Google CREDIT, not a card.
+gemini = ["dep:ureq", "dep:ring", "dep:base64"]
+# ops-health: the Tailscale and gateway probes of `recall doctor memory` (maintainer ops tooling, off by default).
+ops-health = []
+
+# Voyage query-embedding HTTP client. Gated behind the `voyage` feature.
+# ureq = blocking, minimal, rustls (no OpenSSL/native-tls toolchain issues on MSVC).
+# Only the QUERY TEXT is ever sent; document bodies never leave the machine.
+[dependencies.ureq]
+version = "2"
+default-features = false
+features = ["tls", "json"]
+optional = true
+
+# Service-account JWT signing for the `gemini` channel (RS256 over PKCS#8).
+# Both crates are ALREADY in the tree transitively via ureq/rustls, so making them direct
+# dependencies adds no new supply-chain surface.
+# ring: "Apache-2.0 AND ISC" (read from the crate's own LICENSE, not a badge) - both safe.
+[dependencies.ring]
+version = "0.17"
+optional = true
+
+[dependencies.base64]
+version = "0.22"
+optional = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

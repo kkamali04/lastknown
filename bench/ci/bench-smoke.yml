@@ -1,0 +1,30 @@
+name: bench-smoke
+# Manual only, so it can never spend minutes unasked. Runs 20 LongMemEval_S questions on the keyword channel.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: bench-smoke-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+      - name: Build recall (default features, keyword channel only)
+        run: cargo build --release --locked
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - name: Smoke (20 LongMemEval_S questions, fts5, no model)
+        env:
+          RECALL_BIN: ${{ github.workspace }}/target/release/recall
+          BENCH_WORK: ${{ runner.temp }}/bench-work
+          BENCH_DATA: ${{ runner.temp }}/bench-data
+        run: python3 bench/scripts/smoke.py

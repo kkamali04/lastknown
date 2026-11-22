@@ -1,0 +1,41 @@
+# Rust build artifacts
+/target
+
+# Python bytecode (eval harness + scripts tests)
+__pycache__/
+*.pyc
+
+# Local memory DB (lives in ~/.recall, but guard against copies)
+*.db
+*.db-wal
+*.db-shm
+
+# Session transcript dumps accidentally landing here
+*-this-session-is-being-continued-*.txt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Local databases / models / runtimes (never commit)
+.recall/
+*.onnx
+onnxruntime*.dll
+libonnxruntime*
+
+# Per-worktree build dirs and python venvs
+target-*/
+.venv*/
+venv/
+
+# Secrets / local config
+.env
+.env.*
+*.pem
+
+# Logs and tool caches
+*.log
+.ruff_cache/
+.pytest_cache/
+.codegraph/
+.claude/

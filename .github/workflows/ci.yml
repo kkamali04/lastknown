@@ -1,0 +1,108 @@
+name: ci
+# Routine CI runs on our own machines (scripts/ci-local.ps1, scripts/ci-local.sh); GitHub minutes are
+# for a manual run or a PR labelled `ci`. No push triggers.
+on:
+  workflow_dispatch:
+    inputs:
+      native_candidates:
+        description: Run native release candidate validation instead of routine CI
+        type: boolean
+        default: false
+  pull_request:
+    types: [labeled, synchronize, reopened]
+jobs:
+  native-candidates:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_candidates
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-candidates.yml
+  rust:
+    if: (github.event_name == 'workflow_dispatch' && !inputs.native_candidates) || contains(github.event.pull_request.labels.*.name, 'ci')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # recall shells out to `rg` (query rg channel, index/prune enumeration); without it the tests
+      # exercise the fallback walk and the prune gate refuses. Fresh runners do not ship ripgrep.
+      - name: Install ripgrep (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ripgrep && rg --version
+      - name: Install ripgrep (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ripgrep -y --no-progress && rg --version
+      - name: "Build (default features, free/offline only)"
+        run: cargo build --release
+      - name: Test
+        run: cargo test --release -- --test-threads=2
+      - name: Test (ops-health feature)
+        run: cargo test --release --features ops-health -- --test-threads=2
+  # A beta tester's first run: the README Quickstart on a fresh runner (no Rust cache, no ripgrep),
+  # then index / embed / query / settings / status / MCP. Any failed step fails the job.
+  clean-install:
+    if: (github.event_name == 'workflow_dispatch' && !inputs.native_candidates) || contains(github.event.pull_request.labels.*.name, 'ci')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (README, Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          sh scripts/install.sh --vault ~/notes
+          . ~/.recall/env.sh
+          recall --version
+          echo "install took $(( $(date +%s) - start )) s; target/ $(du -sm target | cut -f1) MiB"
+      - name: Install (README, Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $t = [Diagnostics.Stopwatch]::StartNew()
+          powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Vault $HOME\notes
+          if ($LASTEXITCODE -ne 0) { throw "install.ps1 exited $LASTEXITCODE" }
+          . $HOME\.recall\env.ps1
+          recall --version
+          if ($LASTEXITCODE -ne 0) { throw "recall --version exited $LASTEXITCODE" }
+          $mib = [int]((Get-ChildItem target -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+          "install took $([int]$t.Elapsed.TotalSeconds) s; target/ $mib MiB"
+      - name: First use (vault, index, embed, query, nonsense, status, MCP)
+        run: python scripts/clean_install_smoke.py
+  python:
+    if: (github.event_name == 'workflow_dispatch' && !inputs.native_candidates) || contains(github.event.pull_request.labels.*.name, 'ci')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r mcp/requirements.txt pytest
+      - name: MCP + ingest + installer tests
+        run: python -m pytest ingest mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q
+  secrets:
+    if: (github.event_name == 'workflow_dispatch' && !inputs.native_candidates) || contains(github.event.pull_request.labels.*.name, 'ci')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (full history)
+        run: |
+          curl -sSL -o gl.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gl.tgz" | sha256sum -c -
+          tar xzf gl.tgz gitleaks
+          ./gitleaks git --redact -v --exit-code 1 --config .gitleaks.toml .
