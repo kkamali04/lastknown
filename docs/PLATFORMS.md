@@ -4,14 +4,18 @@ Lastknown's Rust source is portable, but a working semantic search installation 
 compatible ONNX Runtime, ripgrep, Python with venv, and the BGE model. Compiling a target alone
 does not verify installation, search, file watching, or the local UI on that platform.
 
-| Platform | Native candidate target | Validation |
+| Platform | Native candidate target | Required validation for a prebuilt release |
 |---|---|---|
-| Windows x64 | `x86_64-pc-windows-msvc` | Local Windows candidate tested; native workflow also available |
-| Linux x64 (glibc) | `x86_64-unknown-linux-gnu` | Local Ubuntu 24.04 WSL build, Rust tests and prebuilt acceptance passed; native Ubuntu workflow also available |
-| Linux ARM64 (glibc) | `aarch64-unknown-linux-gnu` | Native Ubuntu workflow prepared; requires a passing run |
-| macOS Apple Silicon | `aarch64-apple-darwin` | Native macOS 15 workflow prepared; requires a passing run |
+| Windows x64 | `x86_64-pc-windows-msvc` | Native Windows workflow and fresh package acceptance |
+| Linux x64 (glibc) | `x86_64-unknown-linux-gnu` | Native Ubuntu 24.04 workflow and fresh package acceptance |
+| Linux ARM64 (glibc) | `aarch64-unknown-linux-gnu` | Native Ubuntu ARM64 workflow and fresh package acceptance |
+| macOS Apple Silicon | `aarch64-apple-darwin` | Native macOS 15 workflow and fresh package acceptance |
 | macOS Intel | — | Not supported by the pinned ONNX Runtime 1.24.4 NuGet package |
 | Windows ARM64, Linux musl, mobile, BSD | — | No validated prebuilt package in this release |
+
+This table defines the release requirements. Completed runs and exact artifact hashes are
+recorded with each [GitHub release](https://github.com/kkamali04/lastknown/releases), including
+its `NATIVE-VALIDATION.json` receipt. A source build or a prepared workflow alone is not a pass.
 
 The Linux validation baseline is Ubuntu 24.04. Older glibc distributions and other Linux
 distributions need separate testing. WSL evidence is Linux user-space execution, with a
