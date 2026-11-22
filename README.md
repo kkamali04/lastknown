@@ -319,7 +319,7 @@ The `recall` crate is fully offline:
 
 ## Requirements
 
-- A recent stable Rust (`Cargo.lock` is lockfile version 4, so Cargo 1.78 or newer; built and tested here with 1.97), a C toolchain for the bundled SQLite (MSVC Build Tools on Windows)
+- A recent stable Rust (`Cargo.lock` is lockfile version 4, so Cargo 1.78 or newer; native release candidates use 1.96.0), a C toolchain for the bundled SQLite (MSVC Build Tools on Windows)
 - ripgrep (`rg`) on PATH: `recall index` uses it to list the notes folder (the installers install it when a package manager is present)
 - ~300 MB disk for the model and ONNX Runtime
 

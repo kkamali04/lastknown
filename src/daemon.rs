@@ -1409,9 +1409,9 @@ mod tests {
         let mut out = String::new();
         match BufReader::new(s).read_line(&mut out) {
             Ok(_) => assert!(out.contains("cancelled"), "{out}"),
-            // Closing a socket with unread protocol junk can send RST on Windows,
+            // Closing a socket with unread protocol junk can send RST (including on macOS),
             // instead of delivering the cancellation error followed by EOF.
-            Err(e) if cfg!(windows) && e.kind() == std::io::ErrorKind::ConnectionReset => {
+            Err(e) if e.kind() == std::io::ErrorKind::ConnectionReset => {
                 assert!(out.is_empty() || out.contains("cancelled"), "{out}");
             }
             Err(e) => panic!("reading cancellation response: {e}"),

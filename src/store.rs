@@ -1311,6 +1311,8 @@ impl Store {
             used_fallback,
             elapsed_ms,
         } = enumerate_docs(root, &exclude)?;
+        #[cfg(test)]
+        let files = tests::arrange_enumeration(files);
         eprintln!(
             "recall index: found {} docs in {:.1} s{}",
             files.len(),
@@ -4931,6 +4933,38 @@ mod tests {
     thread_local! {
         /// Full scans [`Store::scan_searchable`] ran on this thread.
         pub(super) static SNAPSHOT_SCANS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+        static ENUMERATION_ORDER: std::cell::RefCell<Option<(bool, Vec<PathBuf>)>> = const { std::cell::RefCell::new(None) };
+    }
+
+    /// Override the actual list consumed by ingest_dir on this test thread only.
+    pub(super) fn arrange_enumeration(mut files: Vec<PathBuf>) -> Vec<PathBuf> {
+        ENUMERATION_ORDER.with(|order| {
+            if let Some((reverse, observed)) = order.borrow_mut().as_mut() {
+                files.sort();
+                if *reverse { files.reverse(); }
+                *observed = files.clone();
+            }
+        });
+        files
+    }
+
+    struct EnumerationOrder;
+    impl EnumerationOrder {
+        fn set(reverse: bool) -> Self {
+            ENUMERATION_ORDER.with(|order| {
+                assert!(order.borrow().is_none());
+                *order.borrow_mut() = Some((reverse, Vec::new()));
+            });
+            Self
+        }
+        fn observed(&self) -> Vec<PathBuf> {
+            ENUMERATION_ORDER.with(|order| order.borrow().as_ref().unwrap().1.clone())
+        }
+    }
+    impl Drop for EnumerationOrder {
+        fn drop(&mut self) {
+            ENUMERATION_ORDER.with(|order| *order.borrow_mut() = None);
+        }
     }
 
     /// The per-view snapshot cache: reused until a commit on ANY connection, a write on this one,
@@ -6138,33 +6172,15 @@ mod tests {
     /// never reconsiders. Reaching them the other way round moves the document correctly. Same
     /// inputs, different answer.
     ///
-    /// Two fixtures are run whose on-disk ordering differs at observation time — the rival is
-    /// named `aaa-rival.md` in one and `zzz-rival.md` in the other, and each run reads the
-    /// directory back and records which came first, with the two runs asserted to have differed.
-    ///
-    /// ⚠️ That is weaker than it sounds and the limit is stated rather than papered over: this
-    /// observes a SEPARATE `read_dir` call, not the sequence `ingest_dir` actually consumed, and
-    /// `std::fs::read_dir` does not promise the same order twice. So this establishes the
-    /// OUTCOME is correct for two differently-ordered fixtures; it does not prove the ingester
-    /// consumed them in two different orders.
-    ///
-    /// What actually makes order irrelevant is structural, and is covered by mutation instead:
-    /// the decision is not taken while walking at all. Disabling the deferral turns this test red
-    /// and names the failing fixture.
+    /// Two identical fixtures inject opposite orders into the actual list consumed by ingest_dir.
+    /// The observed consumed lists must differ; no filesystem iteration-order promise is needed.
+    /// Disabling the deferral turns this test red and names the failing order.
     #[test]
     fn move_versus_revive_does_not_depend_on_enumeration_order() {
         let mut observed_orders: Vec<bool> = Vec::new();
-        // read_dir order is per-filesystem: NTFS sorts by name, ext4 by a seeded name hash, tmpfs by
-        // creation. Two names alone gave ONE order on CI's ext4, so the fixture varies both the name
-        // and whether the rival's entry is re-created after the rename; every fixture must pass, and
-        // together they must show both orders.
-        let names = [
-            "aaa-rival.md", "zzz-rival.md", "mmm-rival.md", "b-rival.md", "rival-q.md",
-            "x9-rival.md", "c-rival.md", "rival-7.md", "kk-rival.md", "t-rival.md",
-        ];
-        for (i, rival_name) in names.into_iter().enumerate() {
-            let recreate = i % 2 == 1;
-            let dir = move_probe_dir(&rival_name.replace('.', "_"));
+        for reverse in [false, true] {
+            let rival_name = "rival.md";
+            let dir = move_probe_dir(if reverse { "order-reverse" } else { "order-forward" });
             let s = Store::open_at(std::path::Path::new(":memory:")).unwrap();
 
             // an unrelated note at target.md, later tombstoned
@@ -6188,27 +6204,21 @@ mod tests {
 
             // in ONE run: rename src.md onto the tombstoned path, and edit the rival away from H
             std::fs::rename(dir.join("src.md"), dir.join("target.md")).unwrap();
-            if recreate {
-                std::fs::remove_file(dir.join(rival_name)).unwrap();
-            }
             std::fs::write(dir.join(rival_name), "# Same\n\nthe rival has been edited to J").unwrap();
 
-            // Record the order the filesystem ACTUALLY hands them back in.
-            let names: Vec<String> = std::fs::read_dir(&dir)
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .map(|e| e.file_name().to_string_lossy().into_owned())
-                .collect();
-            let target_at = names.iter().position(|n| n == "target.md").unwrap();
-            let rival_at = names.iter().position(|n| n == rival_name).unwrap();
-            observed_orders.push(target_at < rival_at);
-
+            let order = EnumerationOrder::set(reverse);
             s.ingest_dir(&dir).unwrap();
+            let consumed = order.observed();
+            drop(order);
+            assert_eq!(consumed.len(), 2);
+            let target_at = consumed.iter().position(|p| p.file_name().unwrap() == "target.md").unwrap();
+            let rival_at = consumed.iter().position(|p| p.file_name().unwrap() == rival_name).unwrap();
+            observed_orders.push(target_at < rival_at);
 
             let at_target = live_id_like(&s, "target.md").expect("indexed");
             assert_eq!(
                 at_target, src_id,
-                "the LIVE note must move onto the path with the rival named {rival_name}"
+                "the LIVE note must move onto the path with reverse order = {reverse}"
             );
             assert_ne!(at_target, tomb, "the tombstone must not be revived");
             assert_eq!(vec_count(&s, src_id), 1, "and the vectors must come with it");
@@ -6216,12 +6226,7 @@ mod tests {
 
             std::fs::remove_dir_all(&dir).ok();
         }
-        assert_eq!(observed_orders.len(), names.len());
-        assert!(
-            observed_orders.contains(&true) && observed_orders.contains(&false),
-            "the two fixtures must at least LOOK differently ordered on disk - if they do not, \
-             this test is covering one arrangement twice and should be rewritten, not trusted"
-        );
+        assert_eq!(observed_orders, [false, true], "the ingester must consume both orders");
     }
 
     /// Ambiguity is never resolved by guessing. Two live documents share a body, both are then

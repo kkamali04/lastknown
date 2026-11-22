@@ -1195,11 +1195,17 @@ impl CalibrationQueue {
     /// is unbounded (coalescing bounds it at one entry per view) and a state lock held by the
     /// calibrator at this instant just skips the submit; the view's next miss tries again.
     pub(crate) fn submit(&self, reader: crate::scope::Reader) {
+        self.submit_with_elapsed(reader, std::time::Instant::elapsed);
+    }
+
+    // Inject elapsed time so retry-boundary tests do not subtract from a host's monotonic
+    // clock origin (which can underflow on a freshly booted runner).
+    fn submit_with_elapsed(&self, reader: crate::scope::Reader, elapsed: impl Fn(&std::time::Instant) -> std::time::Duration) {
         let prefix = phantom_prefix(&reader);
         let Ok(mut slots) = self.status.0.try_lock() else { return };
         match slots.get(&prefix) {
             Some(Slot::Pending) => return,
-            Some(Slot::Failed(at)) if at.elapsed() < CALIBRATION_RETRY => return,
+            Some(Slot::Failed(at)) if elapsed(at) < CALIBRATION_RETRY => return,
             _ => {}
         }
         if self.tx.send(reader).is_err() {
@@ -1211,15 +1217,6 @@ impl CalibrationQueue {
         slots.insert(prefix, Slot::Pending);
     }
 
-    /// Test-only: move every timestamp `by` into the past, as if that much time had gone by.
-    #[cfg(test)]
-    fn age(&self, by: std::time::Duration) {
-        for slot in self.status.0.lock().unwrap().values_mut() {
-            if let Slot::Failed(at) = slot {
-                *at -= by;
-            }
-        }
-    }
 }
 
 thread_local! {
@@ -4794,14 +4791,14 @@ pub(crate) mod tests {
         }
         assert_eq!(rx.try_iter().count(), 2, "one job per view, however many queries miss");
         // a long-running job never expires into a twin (Codex calib r2)
-        q.age(CALIBRATION_RETRY * 3);
-        q.submit(w1.clone());
+        q.submit_with_elapsed(w1.clone(), |_| CALIBRATION_RETRY * 3);
         assert_eq!(rx.try_iter().count(), 0, "still pending: no second job");
         q.status().finished(&w1, false); // a failed attempt waits out CALIBRATION_RETRY...
         q.submit(w1.clone());
         assert_eq!(rx.try_iter().count(), 0);
-        q.age(CALIBRATION_RETRY);
-        q.submit(w1.clone()); // ...then queues once more
+        q.submit_with_elapsed(w1.clone(), |_| CALIBRATION_RETRY - std::time::Duration::from_nanos(1));
+        assert_eq!(rx.try_iter().count(), 0, "the retry wait includes every instant before the boundary");
+        q.submit_with_elapsed(w1.clone(), |_| CALIBRATION_RETRY); // ...then queues once more
         q.submit(w1.clone());
         assert_eq!(rx.try_iter().count(), 1);
         q.status().finished(&w1, true); // stored: the next miss (a later corpus change) queues again
