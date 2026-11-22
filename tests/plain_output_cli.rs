@@ -172,7 +172,7 @@ fn diagnostics_are_opt_in_and_query_headers_are_safe() {
 #[test]
 fn an_interrupt_resets_a_terminal_only_and_still_ends_the_process_by_the_signal() {
     use std::io::Read;
-    use std::os::fd::FromRawFd;
+    use std::os::fd::{AsRawFd, FromRawFd};
     use std::os::unix::process::{CommandExt, ExitStatusExt};
     use std::process::Stdio;
     let (home, _vault) = setup("int");
@@ -197,8 +197,11 @@ fn an_interrupt_resets_a_terminal_only_and_still_ends_the_process_by_the_signal(
                 Ok(())
             })
         };
-        let mut child = ui.stdout(unsafe { Stdio::from_raw_fd(theirs) }).stderr(Stdio::null()).spawn().expect("spawn recall ui");
-        drop(ui); // our copy of the far end
+        // Keep a parent-owned far end until the output is drained: Darwin flushes queued PTY
+        // output on the last slave close, which otherwise discards the reset before we read it.
+        let far = unsafe { std::fs::File::from_raw_fd(theirs) };
+        let mut child = ui.stdout(Stdio::from(far.try_clone().unwrap())).stderr(Stdio::null()).spawn().expect("spawn recall ui");
+        drop(ui); // the command's copy; `far` deliberately remains open
         let mut near = unsafe { std::fs::File::from_raw_fd(ours) };
         let (mut seen, mut buf) = (Vec::new(), [0u8; 4096]);
         // The second line: the server is up and blocking.
@@ -209,13 +212,24 @@ fn an_interrupt_resets_a_terminal_only_and_still_ends_the_process_by_the_signal(
         }
         unsafe { libc::kill(child.id() as i32, libc::SIGINT) };
         let status = child.wait().unwrap();
-        // A terminal whose far end is closed ends with a read error, a pipe with 0.
-        while let Ok(n) = near.read(&mut buf) {
-            if n == 0 {
-                break;
-            }
-            seen.extend_from_slice(&buf[..n]);
+        // The child has exited, so all its writes are complete. Drain without waiting for EOF
+        // from the parent-owned far end, preserving the descriptor's other status flags.
+        unsafe {
+            let flags = libc::fcntl(near.as_raw_fd(), libc::F_GETFL);
+            assert_ne!(flags, -1, "F_GETFL: {}", std::io::Error::last_os_error());
+            assert_ne!(libc::fcntl(near.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK), -1,
+                       "F_SETFL: {}", std::io::Error::last_os_error());
         }
+        loop {
+            match near.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => seen.extend_from_slice(&buf[..n]),
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
+                Err(e) => panic!("draining recall ui output: {e}"),
+            }
+        }
+        drop(far);
         let seen = String::from_utf8_lossy(&seen);
         assert_eq!(seen.ends_with("\x1b[0m"), on_terminal, "terminal={on_terminal}: {seen:?}");
         assert_eq!(seen.contains('\x1b'), on_terminal, "terminal={on_terminal}: {seen:?}");
