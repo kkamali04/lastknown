@@ -1,8 +1,12 @@
 # Public benchmark results
 
-Retrieval only: no LLM is called anywhere, and no private question set is used. These are the numbers quoted in the
-README, with the protocol and the command that reproduces each. The harness is in [`bench/`](../bench/README.md); read its
-protocol section before comparing any number with another system's.
+This page covers the primary public-corpus retrieval protocols: no LLM reader or private
+question set is used in these tables. The [full evaluation inventory](EVALUATION.md) also
+covers historical rival comparisons, BEAM, private capture judgments and coding-agent
+trials, some of which did use LLMs. Those are separate experiments.
+The harness is in [`bench/`](../bench/README.md); read its protocol section before comparing
+any number with another system's. Commands here reproduce the indicated primary protocols,
+not every historical adapter, split or confidence interval.
 
 | benchmark | metric | score | notes |
 |---|---|---|---|
@@ -118,10 +122,14 @@ It uses the same `BENCH_DATA` and verified qrels as `beir.py`, and reports both 
 
 ## What these numbers do not show
 
-These retrieval tables do not compare recall with other memory systems: published figures for other systems mix protocols and often use an LLM
-reader. A separate small coding-agent pilot did compare memory adapters, without establishing an overall winner; see the
-[evaluation inventory](EVALUATION.md#coding-agent-memory-comparison). Retrieval scores also say nothing about dependable
-answerability (knowing when no answer exists); see [known limits](LIMITS.md).
+The primary tables on this page compare Recall's retrieval channels. Separate
+[historical adapter trials](EVALUATION.md#historical-retrieval-comparisons) did directly
+compare MemPalace/gbrain on shared public-data protocols. Their full-turn LME and full-set
+LoCoMo/BEIR rows must not be blended with these later rows or vendor answer-accuracy scores.
+See also [BEAM fusion experiments](EVALUATION.md#long-context-fusion-beam-and-the-eight-set-study)
+and the [coding-agent pilot](EVALUATION.md#coding-agent-memory-comparison), which did not
+establish an overall winner. Retrieval scores do not establish dependable answerability
+(knowing when no answer exists); see [known limits](LIMITS.md).
 
 The BEIR sets are public corpora of clean, single-topic documents. No public, repeatable benchmark of a personal notes
 folder exists here, so the fused-over-keyword gain has not been shown on one, and a messy real vault may see less.

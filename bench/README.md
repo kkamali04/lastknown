@@ -1,8 +1,13 @@
 # recall public benchmark suite
 
-Everything here measures **retrieval only** (is the right session / document / turn in the top k?). No LLM is called
-anywhere, no private question set is used, and no dataset is stored in this repo. A stranger with the `recall`
-binary and the commands below should reproduce our numbers (within the noise noted per benchmark).
+The runners below measure **retrieval only** (is the right session / document / turn in the
+top k?), with no LLM reader or private question set. No dataset is stored in this repo.
+They reproduce the stated whole-set protocols; historical TEST splits and adapter studies
+are qualified separately in the [evaluation inventory](../docs/EVALUATION.md).
+
+The `evidence/` directory contains aggregate results and hashes, including historical
+rival/BEAM studies and a small private capture study. Those aggregates do not include
+private source text or make every historical experiment reproducible from this repository.
 
 `RESULTS.md` lists every run, bad ones included. For each run the raw per-question outputs, the score file, the exact
 command, the binary sha256 and the recall commit are kept in a `results/<date>-<benchmark>/` folder under `bench/` in
@@ -28,8 +33,9 @@ Metrics come from the upstream `eval_utils.evaluate_retrieval` (copied as `lme_e
 
 **LongMemEval, MemPalace-style 470.** Same questions file, but the document is every turn (user *and* assistant)
 joined with `\n`, gold = `answer_session_ids`, scored on **all 470 non-abstention questions**. This is the
-protocol behind the published MemPalace 96.6, gbrain 98.51 and Grove 99.36 self-reported figures. It is easier than
-the official 419 for assistant-evidence questions, so **never put a 470 number and a 419 number in one comparison.**
+full-turn protocol used in the [historical rival trials](../docs/EVALUATION.md#historical-retrieval-comparisons).
+It includes assistant-evidence questions that the user-turn protocol excludes, so
+**never put a 470 number and a 419 number in one comparison.**
 `lme_score470.py --official-gold` re-scores a full-turn run against the official gold on the 419 for a like-for-like row.
 
 **any@k / all@k.** `R_any@k` = the share of questions where *at least one* gold session is in the top k;

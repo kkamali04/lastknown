@@ -1,5 +1,5 @@
-<h1 align="center">lastknown</h1>
-<p align="center"><strong>Local memory that checks its sources.</strong></p>
+![lastknown — Local memory that checks its sources. A retrieved passage is linked to its source note, with changed lines highlighted.](docs/images/lastknown-hero.png)
+
 <p align="center">Find the right note. See whether the passage changed.</p>
 
 <p align="center">
@@ -33,11 +33,10 @@ The executable is still named `recall`.
 - **Keep the index maintainable.** Refresh changed notes and embeddings, inspect status,
   and apply pattern-based redaction to stored text and output.
 
-![Illustration of the freshness workflow: index a note with port 8080; editing its source to 9090 leaves the old excerpt flagged stale; reindexing returns 9090.](docs/images/freshness.svg)
-
-The illustration follows the [tested demo](examples/stale-demo). It does not judge whether a
-claim is true: it checks the indexed text against the source. Changes confined to a redacted
-value can be missed. [How freshness works →](docs/FRESHNESS.md)
+The [portable demo](examples/stale-demo) changes a source note from port `8080` to `9090`,
+shows the old excerpt as stale, then reindexes and retrieves the update. Freshness checks
+source text; it does not establish factual truth. Changes confined to a redacted value
+can be missed. [How freshness works →](docs/FRESHNESS.md)
 
 ## Get started
 
@@ -158,10 +157,35 @@ the gain over keywords; fusion adds little over BGE. Hybrid retrieval uses stand
 questions. Both the fresh run and the exact released Linux binary reproduced all 900
 query/channel ranked lists from Nov 13, with no failures. [Raw public-ID runs and provenance →](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/scifact-baseline-20261122.zip)
 
-The Claude-session research also included duplicate/multi-topic stress tests, answerability
-checks and a small multi-system coding-agent pilot. In the pilot, Lastknown and memory-off
-both solved 7/19 tasks; repeats did not establish a winning memory system.
-[Full evaluation inventory, protocols and limits →](docs/EVALUATION.md)
+### Comparisons with other memory systems
+
+The research also ran **direct retrieval comparisons**. These are historical Nov 5–6
+configurations, rescored from saved rankings on Nov 23; they are not new alpha runs or
+measurements of today's competitor releases.
+
+| Historical protocol | Questions | Recall | gbrain local | MemPalace |
+|---|---:|---:|---:|---:|
+| LongMemEval_S full-turn, all evidence sessions in top 5 | 470 | **0.887** | Not run | 0.774 |
+| LongMemEval_S matched subset, same metric | 60 | 0.883 | **0.900** | 0.750 |
+| LoCoMo evidence-bearing questions, session recall@5 | 1,982 | **0.850** | 0.766 | 0.454 |
+| SciFact, full-set nDCG@10 | 300 | **0.734** | 0.698 | 0.650 |
+| NFCorpus, full-set nDCG@10 | 323 | **0.362** | 0.350 | 0.314 |
+
+Recall retrieved every required session for **417/470** LongMemEval questions versus
+**364/470** for the tested MemPalace full-mode setup. gbrain's local setup led the matched
+60-question subset by one question. MemPalace used MiniLM/Chroma; gbrain used local
+nomic/PGLite with reranking off. LoCoMo and BEIR used adapters. Builds, embeddings and
+document construction differ from other published scores.
+[Configurations, exact figures and qualifications →](docs/EVALUATION.md#historical-retrieval-comparisons)
+
+Other completed studies include **BEAM 100K/500K** long-context retrieval, a private
+**Claude-mem capture comparison**, summary/recency/reranker experiments and
+duplicate/multi-topic stress tests. On BEAM 500K, score fusion improved derived recall@5
+from **0.312 to 0.344** over RRF; that is retrieval, not BEAM answer accuracy.
+
+The separate coding-agent pilot remains inconclusive: Lastknown and memory-off both
+solved **7/19** tasks. Retrieval advantages do not establish better coding outcomes.
+[Full evaluation inventory, positive and negative results →](docs/EVALUATION.md)
 
 ## Is it the right memory system for you?
 

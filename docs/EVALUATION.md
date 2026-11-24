@@ -25,13 +25,22 @@ Compare methods within a row; these different metrics are not one common leaderb
 | Duplicate and multi-topic stress tests, Nov 12 | Exact-copy variants and 4/8 documents packed per note, SciFact/NFCorpus | Fused-over-keyword gains survived these synthetic corpus transformations |
 | Answerability and label tests, Nov 8–12 | LoCoMo, LongMemEval and BEAM-related checks; derived negatives | The tested heuristics/judge did not justify reliable default “no answer” labels |
 | Coding-agent pilot, Nov 9 | VibeMemBench, 19 scored targets; multiple memory adapters and selected repeats | No established overall coding-task gain or winning memory system |
-| Alternate LongMemEval protocols | Full-turn 470-question run; larger-context exploratory runs | Protocol-specific research, kept separate from official 419-question results |
+| Direct retrieval comparisons, Nov 5–6 | MemPalace/gbrain: LME 470/60, LoCoMo 1,982, SciFact 300, NFCorpus 323 | Positive results against the tested MemPalace setup; gbrain leads LME matched-60 by one question |
+| Private capture comparison, Nov 1 | Recall/memcap versus Claude-mem, 20 headless reviews / 60 questions | Top-5 correct session 43/60 versus 41/60, with unequal retrieval backends |
+| Eight-set RRF → convex ablation, Nov 6 | Four BEIR sets, two LoCoMo units, BEAM 100K/500K | Historical real-binary fusion comparison; means and 16 raw-file hashes rechecked Nov 23 |
+| BEAM summaries, recency, rerankers | Separate summary A/B, offline date replay, four reported local rerankers | No clear evidence for enabling these enhancements by default |
+| Alternate LongMemEval protocols | Full-turn 470; LME_M exploratory 46-scored-question fused run | Protocol-specific research, kept separate from official 419-question results |
+| Private-note and embedding experiments | Evolving gold, backend/chunking and corpus controls | Several old gains invalidated by gold/ID/wiring problems; no stable personal-vault superiority claim |
 
 The dates identify historical measurements. Only SciFact was rerun for the Nov 22 alpha.
 The [aggregate snapshot](../bench/evidence/public-results.json) contains the figures used
 in the README/plots and SHA256 identities of the source reports. It is an aggregate
 record, not a release of all historical per-query data. Original raw archives remain
 outside this repository. LoCoMo data is CC BY-NC 4.0 and is not redistributed.
+The separate [historical-comparison aggregate](../bench/evidence/historical-comparisons.json)
+records the rival and BEAM studies, exact means, denominators, configurations and input
+hashes. The Nov 23 pass rescored saved results; it did not call models or rerun products.
+Aggregate files alone cannot reproduce experiments whose raw inputs are not distributed.
 
 ## Five-set BEIR audit
 
@@ -92,6 +101,109 @@ The older full-user-plus-assistant-turn 470-question LongMemEval protocol produc
 R_all@5 0.887. Its gold, document construction, fusion and denominator differ from the
 official 419 result. See [the dated results log](../bench/RESULTS.md); do not mix the two.
 
+## Historical retrieval comparisons
+
+Measured Nov 5–6, 2026; independently rescored from saved ranked lists and public gold
+Nov 23. These rows compare the tested configurations, not current releases or official
+end-to-end answer pipelines. There were no missing queries in the scored captures.
+
+| Protocol / metric | n | Recall | gbrain local | MemPalace |
+|---|---:|---:|---:|---:|
+| LongMemEval_S full user+assistant sessions, R_any@5 | 470 | 0.9809 | Not run | 0.9213 |
+| Same protocol, R_all@5 | 470 | 0.8872 | Not run | 0.7745 |
+| Same protocol, R_all@10 | 470 | 0.9574 | Not run | 0.8830 |
+| Matched LME subset, R_all@5 | 60 | 0.8833 | 0.9000 | 0.7500 |
+| LoCoMo historical evidence-bearing questions, session R@5 | 1,982 | 0.8504 | 0.7664 | 0.4544 |
+| LoCoMo historical evidence-bearing questions, turn R@5 | 1,982 | 0.5523 | 0.5304 | 0.3249 |
+| SciFact full-set nDCG@10 | 300 | 0.7340 | 0.6977 | 0.6501 |
+| NFCorpus full-set nDCG@10 | 323 | 0.3624 | 0.3502 | 0.3136 |
+
+The 470-question R_all@5 counts are 417 versus 364; 70 questions succeeded only for
+Recall and 17 only for MemPalace. On the 60-question subset, gbrain scored 54/60 versus
+Recall 53/60 and MemPalace 45/60. That one-question difference is not an established winner.
+
+- **MemPalace 3.12.0:** ChromaDB + all-MiniLM-L6-v2. The LongMemEval command used
+  `--mode full --granularity session`. An old report called it “raw” in places; the
+  command/audit establish full mode. It is not the product's headline raw-mode setup.
+- **gbrain 0.60.574.0:** PGLite + local Ollama/nomic-embed-text (768 dimensions), balanced
+  retrieval, reranker off, autocut off. Paid OpenAI/Voyage configurations were not run.
+  The full 470-question LME run was not completed. Only top five were captured for its
+  60-question LME run; no top-ten score is inferred.
+- **Recall:** preserved historical rankings, not a new simultaneous run. Build labels in
+  the original rival report were inconsistent; the matched-60 run used an older build.
+  These are not measurements of the Nov 22 alpha against current competitors.
+- LoCoMo/BEIR used adapters with common document units and scorers. The 1,982-question
+  LoCoMo rows cover all categories with annotated evidence (four no-evidence questions
+  excluded) and retain historical evidence multiplicity. Evidence-deduplicated session
+  scores are 0.8488 / 0.7651 / 0.4544; both variants are retained in the aggregate.
+  Neither variant should be mixed with the later TEST-half/category-filtered table.
+- Shared VPS load and differing indexing/query work prevent a clean speed ranking.
+  Vendor-published Zep/Mem0/Grove/Attemory scores are literature, not additional runs here.
+  QMD was researched but was not installed or benchmarked in the retained comparison.
+
+## Long-context fusion: BEAM and the eight-set study
+
+This Nov 6 real-binary experiment compared RRF build `07a728a` with convex build
+`da9c540`, abstain off. The BGE weight of 0.6 was frozen from DEV, with split seed
+20261105. It differs from the Nov 12 fused-versus-keyword audit above.
+
+| Dataset / unit | Questions | Metric | RRF | Convex | Gain, points |
+|---|---:|---|---:|---:|---:|
+| SciFact | 146 | nDCG@10 | 0.7336 | 0.7409 | +0.73 |
+| NFCorpus | 159 | nDCG@10 | 0.3580 | 0.3647 | +0.67 |
+| SciDocs | 487 | nDCG@10 | 0.1830 | 0.1944 | +1.14 |
+| FiQA | 327 | nDCG@10 | 0.3646 | 0.4173 | +5.27 |
+| LoCoMo sessions | 1,036 | R@5 | 0.8551 | 0.8780 | +2.28 |
+| LoCoMo turns | 784 | R@5 | 0.5579 | 0.5768 | +1.89 |
+| BEAM 100K | 193 | Derived R@5 | 0.3681 | 0.3953 | +2.72 |
+| BEAM 500K | 179 | Derived R@5 | 0.3120 | 0.3436 | +3.16 |
+
+BEAM 500K was never used to choose the weight in this study; all 179 questions were
+scored. Convex improved 16 questions and worsened six. Saved conversation-cluster
+bootstrap intervals were [+0.67, +4.96] points for 100K and [+1.30, +5.06] for 500K.
+Those intervals were not rerun Nov 23; all means, better/worse counts and the 16 source
+data hashes were rechecked. The original SciFact/NFCorpus gain intervals crossed zero.
+
+BEAM here is a **derived evidence-retrieval test**, with no answer reader. It is not
+official BEAM QA accuracy. The LoCoMo RRF turn score also differs slightly from the later
+Nov 13 build. Keep these experiment identities separate.
+
+## Private capture comparison: Claude-mem
+
+Twenty sampled headless code-review sessions, three questions each, measured in the
+Nov 1 capture study. Mechanical counts were recomputed from the saved 60-question file.
+
+| Correct session retrieved | Recall/memcap after embedding | Claude-mem tested FTS5 path |
+|---|---:|---:|
+| In the top five | 43/60 | 41/60 |
+| Ranked first | 22/60 | 13/60 |
+
+Both found 34 questions; Recall alone found nine, Claude-mem alone seven, neither ten.
+Recall used FTS5+BGE. Claude-mem's Chroma path was unavailable, so it used its own FTS5.
+The earlier Recall 31/60 result was keyword-only before embedding and is superseded
+within this experiment. This small private review sample does not rank current products.
+
+The 20 preserved model-judge files counted 100/100 key items present for memcap versus
+22 present / 28 partial / 50 absent for Claude-mem. Its 200 judged claims were 187
+supported / eight unsupported / five contradicted. These are recounted **saved model
+judgments**, not a new blind factual audit. Memcap included labeled Claude-mem summaries;
+the old “zero errors” claim covered verbatim copied text only. Source transcripts and
+inherited summaries may contain errors. No universal correctness claim follows.
+
+Only aggregate counts and source hashes are published; private capture/query text and
+session identifiers are not distributed.
+
+## Other completed experiments and negative results
+
+| Study | Result | Interpretation |
+|---|---|---|
+| BEAM 100K raw versus summaries, 20 chats / 247 sessions / 355 questions | FTS R@5: raw 0.7462, raw+summary 0.7503, summary-only 0.6358. BGE: 0.7748 / 0.7713 / 0.6044 | Added-summary intervals crossed zero; summary-only was worse. Different session metric/store from the 193-question fusion study; saved aggregates extracted, not newly rescored per query. Experimental binary provenance was incomplete. |
+| Recency/stale ranking replay | Temporal TEST: LME 96 questions and LoCoMo 95 both had zero score change; other LoCoMo 459 questions changed by −0.0005 | Offline formula replay, not a binary change. Reordering did not improve top-five gold coverage; static corpora could not establish a stale penalty. Both knobs stayed zero. |
+| Four local cross-encoder rerankers | Reported DEV gains approximately −0.9 to +1.4 points, none significant, with extra latency | No basis for a default reranking change; no new model run here. |
+| LongMemEval_M exploration | Fused 46 scored questions: R_all@5 0.739, versus keyword 0.761 and BGE 0.652. Separate keyword run: 419 scored, 0.742 | Manifest says M despite an erroneous S report heading. A small exploratory run existed; no full matched large-context fusion rebuild was completed. |
+| Nov 12 H1–H6 controls | Keyword/fusion, weight grid, RRF, exact-copy collapse, multi-topic packing, query-instruction controls | No small tested replacement met the stop rule. Exact-copy collapse was not merged; synthetic stress tests do not prove personal-vault performance. |
+| Private-note gold and embedding/chunking iterations | Changing gold versions, ID/path/corpus/backend errors invalidated several early gains; a later roughly 0.593 R@5 did not beat keyword | No stable personal-vault improvement claim. Timeout-only runs are infrastructure failures, not zero accuracy. The Qwen CPU trial stopped before retrieval queries. |
+
 ## Coding-agent memory comparison
 
 Historical VibeMemBench pilot: solver gpt-6-luna via Codex CLI 0.166.0, 20 planned targets,
@@ -133,6 +245,9 @@ The optional Haiku judge's TEST balanced accuracy was 0.734 [0.642, 0.792], belo
 0.75 target; it labeled about 18% of answerable-and-retrieved questions. It remains off.
 Lexical and channel-agreement labels also did not justify dependable default abstention.
 Retrieval relevance, factual correctness and “the answer exists” are separate properties.
+The early deleted-answer experiment was invalid because indexing was additive; later
+pruned-store tests corrected that. Subject-swap negatives depend on a lexical construction,
+and high retained recall is not itself good no-answer classification accuracy.
 
 Freshness is checked through a different contract: the [portable demo](TRY-IT.md) edits
 a source note, checks the stale warning, reindexes and checks the updated result. It also
@@ -145,7 +260,8 @@ not that the source is factually correct. Redacted-value changes and hashing bud
 - [Public dataset locks, runners and environment](../bench/README.md)
 - [Detailed retrieval protocols and baseline qualifications](BENCHMARKS.md)
 - [Dated historical results, including invalid/alternate rows](../bench/RESULTS.md)
-- [Curated aggregate figures and input-report hashes](../bench/evidence/public-results.json)
+- [Curated release-era figures and input-report hashes](../bench/evidence/public-results.json)
+- [Historical rival, BEAM and capture aggregates with source hashes](../bench/evidence/historical-comparisons.json)
 - [Nov 22 SciFact raw-ID runs, comparisons and separate embedding/query provenance](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/scifact-baseline-20261122.zip)
 - [Exact four-platform native acceptance receipts](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/NATIVE-VALIDATION.json)
 

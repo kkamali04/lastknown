@@ -1,0 +1,435 @@
+{
+  "analysis_date": "2026-11-23",
+  "fresh_model_or_benchmark_run": false,
+  "longmemeval": {
+    "full470": {
+      "Recall": {
+        "questions": 470,
+        "any@5": 0.9808510638297873,
+        "all@5": 0.8872340425531915,
+        "any@10": 0.9936170212765958,
+        "all@10": 0.9574468085106383
+      },
+      "MemPalace_full": {
+        "questions": 470,
+        "any@5": 0.9212765957446809,
+        "all@5": 0.774468085106383,
+        "any@10": 0.9659574468085106,
+        "all@10": 0.8829787234042553
+      }
+    },
+    "matched60": {
+      "Recall_old_build": {
+        "questions": 60,
+        "any@5": 0.9833333333333333,
+        "all@5": 0.8833333333333333,
+        "any@10": 0.9833333333333333,
+        "all@10": 0.9666666666666667
+      },
+      "MemPalace_full": {
+        "questions": 60,
+        "any@5": 0.9,
+        "all@5": 0.75,
+        "any@10": 0.95,
+        "all@10": 0.85
+      },
+      "gbrain_local": {
+        "questions": 60,
+        "any@5": 0.9833333333333333,
+        "all@5": 0.9
+      }
+    }
+  },
+  "lme_full470_paired": {
+    "any@5": {
+      "recall_only": 33,
+      "mempalace_only": 5
+    },
+    "all@5": {
+      "recall_only": 70,
+      "mempalace_only": 17
+    }
+  },
+  "locomo_historical_evidence_multiplicity_protocol": {
+    "Recall": {
+      "session": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.8504023675045846,
+        "deduplicated_R@5": 0.8487971105024587,
+        "R@10": 0.9418612546626906,
+        "deduplicated_R@10": 0.9408031409671167
+      },
+      "dialog": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.5522971697429979,
+        "deduplicated_R@5": 0.5522971697429979,
+        "R@10": 0.6576081358259116,
+        "deduplicated_R@10": 0.6575240456812765
+      }
+    },
+    "gbrain_local": {
+      "session": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.7663763998011779,
+        "deduplicated_R@5": 0.7651292185222558,
+        "R@10": 0.8707104125388812,
+        "deduplicated_R@10": 0.8692141976198484
+      },
+      "dialog": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.5304071035920842,
+        "deduplicated_R@5": 0.5304071035920842,
+        "R@10": 0.6152424483763734,
+        "deduplicated_R@10": 0.6151583582317385
+      }
+    },
+    "MemPalace_adapter": {
+      "session": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.4544452330072056,
+        "deduplicated_R@5": 0.45444036006599076,
+        "R@10": 0.6059914610674858,
+        "deduplicated_R@10": 0.6053637499399356
+      },
+      "dialog": {
+        "questions": 1982,
+        "missing_queries": 0,
+        "R@5": 0.32485338732882413,
+        "deduplicated_R@5": 0.32485338732882413,
+        "R@10": 0.41571820415070654,
+        "deduplicated_R@10": 0.41571820415070654
+      }
+    }
+  },
+  "beir": {
+    "scifact": {
+      "Recall": {
+        "questions": 300,
+        "missing_queries": 0,
+        "ndcg@10": 0.733966768799791
+      },
+      "gbrain_local": {
+        "questions": 300,
+        "missing_queries": 0,
+        "ndcg@10": 0.6977015211898527
+      },
+      "MemPalace_adapter": {
+        "questions": 300,
+        "missing_queries": 0,
+        "ndcg@10": 0.6501470488145121
+      }
+    },
+    "nfcorpus": {
+      "Recall": {
+        "questions": 323,
+        "missing_queries": 0,
+        "ndcg@10": 0.3624227640898095
+      },
+      "gbrain_local": {
+        "questions": 323,
+        "missing_queries": 0,
+        "ndcg@10": 0.3502459543723428
+      },
+      "MemPalace_adapter": {
+        "questions": 323,
+        "missing_queries": 0,
+        "ndcg@10": 0.31360922761794036
+      }
+    }
+  },
+  "claude_mem_capture": {
+    "sessions": 20,
+    "questions": 60,
+    "Recall_memcap": {
+      "found_top5": 43,
+      "found_first": 22
+    },
+    "claude_mem_fts": {
+      "found_top5": 41,
+      "found_first": 13
+    },
+    "overlap": {
+      "both": 34,
+      "only_recall": 9,
+      "only_claude_mem": 7
+    }
+  },
+  "schema_version": 1,
+  "scope": "Historical November 2026 captures rescored November 23. Aggregate evidence only; not new runs of the alpha or current rivals.",
+  "configurations": {
+    "Recall": "Historical saved rankings; exact build labels in the rival report were inconsistent. Matched-60 LME uses an older Recall build.",
+    "MemPalace": "3.12.0; ChromaDB, all-MiniLM-L6-v2. LME --mode full --granularity session, not headline raw mode.",
+    "gbrain_local": "0.60.574.0; PGLite, Ollama/nomic-embed-text 768d, balanced, reranker off, autocut off. No paid embedding/reranking arm.",
+    "Claude_mem": "20 headless review sessions, 60 questions. Its FTS5 path was tested while Chroma was unavailable; Recall/memcap used FTS5+BGE."
+  },
+  "limits": [
+    "Historical builds/configurations, not a rerun of current products or the November22 release.",
+    "MemPalace LongMemEval mode is full, despite old raw wording in RESULTS.",
+    "gbrain LME uses only60questions and an older Recall build; no full470gbrain run.",
+    "LoCoMo historical all-evidence protocol includes duplicate annotations; deduplicated columns are separate.",
+    "Rival BEIR/LoCoMo use adapters, with rerank/autocut disabled; no current managed services run.",
+    "Claude-mem comparison used only20headless review sessions and its FTS5 path while Chroma was unavailable.",
+    "Rival Recall rankings were preserved results, not simultaneous new runs. No current-product leaderboard or clean latency ranking.",
+    "LoCoMo historical 1982-question rows differ from later TEST-half/category-filtered rows.",
+    "The gbrain LME capture contains top five only; no gbrain @10 or full-470 result is inferred.",
+    "Original query text, private captures, session identifiers and raw dataset copies are not distributed here."
+  ],
+  "eight_set_rrf_vs_convex": {
+    "measurement_date": "2026-11-06",
+    "rescore_date": "2026-11-23",
+    "base_build": "07a728a",
+    "convex_build": "da9c540",
+    "base_binary_sha256": "1c4f7e7c618983bbded9ebf54c14d6b1543a6a88babcdfbfa81f2bb801b26b80",
+    "convex_binary_sha256": "1c735953d0408254bc5bff18526cdca96861d0889029487d27a12f7438ea33fe",
+    "bge_weight": 0.6,
+    "split_seed": 20261105,
+    "rows": [
+      {
+        "dataset": "scifact",
+        "questions": 146,
+        "metric": "nDCG@10",
+        "base_RRF": 0.7336311290233547,
+        "convex": 0.7409347408320686,
+        "difference_pp": 0.7303611808713845,
+        "better": 18,
+        "worse": 13,
+        "errors": 0
+      },
+      {
+        "dataset": "nfcorpus",
+        "questions": 159,
+        "metric": "nDCG@10",
+        "base_RRF": 0.35795197388748123,
+        "convex": 0.3646956174457239,
+        "difference_pp": 0.6743643558242622,
+        "better": 45,
+        "worse": 35,
+        "errors": 0
+      },
+      {
+        "dataset": "scidocs",
+        "questions": 487,
+        "metric": "nDCG@10",
+        "base_RRF": 0.18304198441911562,
+        "convex": 0.19444513461949345,
+        "difference_pp": 1.1403150200377834,
+        "better": 101,
+        "worse": 89,
+        "errors": 0
+      },
+      {
+        "dataset": "fiqa",
+        "questions": 327,
+        "metric": "nDCG@10",
+        "base_RRF": 0.36457090369575235,
+        "convex": 0.41729411470590205,
+        "difference_pp": 5.272321101014965,
+        "better": 86,
+        "worse": 44,
+        "errors": 0
+      },
+      {
+        "dataset": "locomo_session",
+        "questions": 1036,
+        "metric": "derived_recall@5",
+        "base_RRF": 0.855148005148005,
+        "convex": 0.877992277992278,
+        "difference_pp": 2.284427284427285,
+        "better": 47,
+        "worse": 21,
+        "errors": 0
+      },
+      {
+        "dataset": "locomo_dialog",
+        "questions": 784,
+        "metric": "derived_recall@5",
+        "base_RRF": 0.557899190520364,
+        "convex": 0.5767980000441735,
+        "difference_pp": 1.8898809523809526,
+        "better": 43,
+        "worse": 25,
+        "errors": 0
+      },
+      {
+        "dataset": "beam100k",
+        "questions": 193,
+        "metric": "derived_recall@5",
+        "base_RRF": 0.3680797613440101,
+        "convex": 0.3952523944104255,
+        "difference_pp": 2.7172633066415446,
+        "better": 16,
+        "worse": 5,
+        "errors": 0
+      },
+      {
+        "dataset": "beam500k",
+        "questions": 179,
+        "metric": "derived_recall@5",
+        "base_RRF": 0.31195921232891327,
+        "convex": 0.3435573992590095,
+        "difference_pp": 3.159818693009623,
+        "better": 16,
+        "worse": 6,
+        "errors": 0
+      }
+    ],
+    "saved_beam_delta_ci_pp": {
+      "beam100k": [
+        0.67,
+        4.96
+      ],
+      "beam500k": [
+        1.3,
+        5.06
+      ]
+    },
+    "interval_scope": "Saved 5000-resample conversation-cluster bootstrap, not rerun November 23. Means, wins/losses and all 16 data hashes rechecked. BEAM500K all 179 questions, never used to choose the weight in this study.",
+    "metric_limit": "Derived retrieval recall@5, not official BEAM end-to-end QA accuracy. Different experiment from November12 fused-versus-keyword audit.",
+    "data_sha256": {
+      "data/beam100k.base.test.jsonl": "3a7fe465560dae5c5076c67b13b5e6ef4f9825c4bec904e9d44920bc51901468",
+      "data/beam100k.cvx.test.jsonl": "617e8addfb6fdccd966d05295318d15edb0c6b042260cc5982877c2a377ccf7c",
+      "data/beam500k.base.all.jsonl": "97510fa29f3c3281167a990b3fdd8ebcc097f2de897569972b00b77df529f53f",
+      "data/beam500k.cvx.all.jsonl": "e94241742289e7196a7ef7e537c3df709a661a814b7a65f48461bf8a4a94dc3e",
+      "data/fiqa.base.test.jsonl": "0c0549b26db3dacd9d155bcc078a68d9cf134f46e09387dba50749b404dfcc4f",
+      "data/fiqa.cvx.test.jsonl": "105fdcb77b87184436a95b4d444a857441a660f08acfa564dc35c2813a548ac7",
+      "data/locomo_dialog.base.test.jsonl": "487132aa288221b9d5af28f2a37fcbb909c90e9c011b643a8171cfe30e831d95",
+      "data/locomo_dialog.cvx.test.jsonl": "7b37efb81663a2823c8db840954e3f6a9a3feebcd171ec012fb608d046d3999a",
+      "data/locomo_session.base.test.jsonl": "b45e91cdfd7bc4f95d4ef827d484ca8f6238918df526a11ebc7576df6b80c26c",
+      "data/locomo_session.cvx.test.jsonl": "33ee7f5d23c8b8c52b3b4d735543a64479ebe2947c77111d05439b1ebf2d8f62",
+      "data/nfcorpus.base.test.jsonl": "dab2ace105ca31c5d0bcadd2192daafb370b40adf7c30bd5dc82b480d0be8652",
+      "data/nfcorpus.cvx.test.jsonl": "58c721306bc186bd3b0b3bc20b0c855ec7efef9578baf888bf6e38b9bd911eae",
+      "data/scidocs.base.test.jsonl": "8eb04cde908cb26a06ef8d8f70b92ed77ce98ec0a90fdf25ea6b6b85e84efd5f",
+      "data/scidocs.cvx.test.jsonl": "ed3e7e575f2270f022a68c234f44b397b1e3041b415ecbf75133e343fa9501a1",
+      "data/scifact.base.test.jsonl": "5930dab953a9ed29ec70df13284ad190cfbed22ce4c63416c65a9e91ede85007",
+      "data/scifact.cvx.test.jsonl": "8b7ba7bc1e629dc9c32ca77acede5784ef551ac3c8a5ec76ba1690777c0e193d"
+    }
+  },
+  "summary_beam100k": {
+    "sessions": 247,
+    "conversations": 20,
+    "questions": 355,
+    "metric": "derived unique-session recall@5",
+    "verification": "Saved aggregate metrics extracted and hashed, not independently rescored per query in November23 pass.",
+    "channels": {
+      "fts5": {
+        "raw": 0.746150234741784,
+        "raw+sum": 0.7502816901408451,
+        "sum": 0.635774647887324
+      },
+      "bge": {
+        "raw": 0.7747887323943662,
+        "raw+sum": 0.7713145539906103,
+        "sum": 0.6044131455399061
+      }
+    },
+    "limits": "Experimental build with incomplete pre-commit binary provenance. Added summaries gave no clear retrieval gain; summary-only worse. Protocol and denominator differ from 193-question BEAM fusion study.",
+    "source_metrics_sha256": "fa086f0ec2485d698e29da3c7dde29cd1ac99a223a214dad0fc4c5c2313bfcbb"
+  },
+  "private_capture_saved_judgments": {
+    "judge_files": 20,
+    "coverage": {
+      "memcap": {
+        "present": 100
+      },
+      "claudemem": {
+        "absent": 50,
+        "partial": 28,
+        "present": 22
+      }
+    },
+    "claudemem_claim_verdicts": {
+      "supported": 187,
+      "unsupported": 8,
+      "contradicted": 5
+    },
+    "limits": [
+      "All20sessions were headless reviews; small/private and not representative of arbitrary chats.",
+      "These are saved model judgments, not a new factual audit or a proof of universal correctness.",
+      "The0wrong claim for memcap only covers text copied from transcripts; source text and inherited Claude-mem summaries can contain errors."
+    ],
+    "judge_source_sha256": [
+      "0fd647fade93fbb6b603e49a4a78627a28578d50e235bfdfc1d1a027ada3e36a",
+      "294a7a43fc8c793d89273b8f72e7c0e24af7588c02948f8c144ad74dd9da77b5",
+      "2a696705e161399b77afdfa6a564dbdde2bfeb387d427d9a246d8fae266fc70e",
+      "3670df2cd55ccaaa27ca39446685faece58d99e867250fd6433d853b0199fd4c",
+      "3cf310cafcb49a290448d23459b00c8f18c9978f4e5422a67e4545b2fc0b51e7",
+      "485a7f4d50932e97f1f60e81f71c14d0ec6bb4ce6e763b9491f52d7e3b92cb58",
+      "52752b4f4d569ab6f31e8ce79b9894a06ab98fac7dfc0ab161340f00fab01f3d",
+      "52c3570f2880ebfbe43813882d216ed0736cb18365ac2bca76be34bced8cf105",
+      "68b55a1c246989d0b59900cf85a11bc20ce5e45db81cc264f3fdd5a13581bda4",
+      "85b2bc193921e3327e3f75468838b93016dbe12f404e3009ab30b6b9a622a644",
+      "8e330def7acf35794f56862486cff20d288fb1096830b07beee7c6bc276705f8",
+      "90f1de517acc6b7cc5a9afe8a7340dc02f896f10d3db017e35ebca37f804ae47",
+      "91f5b35cb79bc1fa1d254f969380d9fa9bd415f44b81e97c023788964aefc505",
+      "94164cf0c757b8206da14fcfc6e2a5e133b191c3bfac8cec1a6f0cbcf0c4f426",
+      "a305fdc5b66c8313bbdf89f62a377a00e8e5e6195c844818300a9f2ed2d33995",
+      "b0c474a0780098bf4e601bcb3f40a55cd790c20a4504babab08f71a357f7828f",
+      "cbaf43071264c52c44ea3509b5cf4da0168f3010bce130add8a4c76830cb6723",
+      "cf1c4278bf5ed2d4493740aacfda9f47cafdcc5eb5330149048fd035eccbab77",
+      "e6586781843d3945bbb4487255124c9827ac4b18348d27887ec35dfb51c965e6",
+      "e92fb9302d7891b3af6227738b50f3f77ee98f7b993476b40b1eedbb63bc4a8f"
+    ]
+  },
+  "source_sha256": {
+    "longmemeval_s_cleaned.json": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+    "full_merged470.jsonl": "754c10cea36dfe6a783eb4d400f691afd70cf4519b1516436b3fef7d6dfaf92e",
+    "mp_lme_full_session.jsonl": "9a66ed3f3ff20e4244ac237a4aebc0519fecdb6bd82f90d62296ab0a0200d0a9",
+    "gb_lme60.jsonl": "e42eaa033a0d515f8d789c21f6a00e261687fedfaa4cd4e113fb1d43e4e41b63",
+    "locomo10.json": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+    "locomo_results.jsonl": "a6acc97ee817edb1a59e89728d4de0179f08bf40b2fe6ff9dae4f5aab71930fb",
+    "res_gb/locomo_conv-26_session.out.json": "6b1617b2ab41b9e7f0cc9652c159a71efd53347b14d9f98b68dbfcd33cb315c2",
+    "res_gb/locomo_conv-30_session.out.json": "db5c9ab040f4e6ff448b43ec7b32647d2f4cd788042dd8fa56676df03b7c6263",
+    "res_gb/locomo_conv-41_session.out.json": "b6084c8661ac4d4fe1325334575aedb9a3a82f2acf4062952475ebcd67d2084c",
+    "res_gb/locomo_conv-42_session.out.json": "76c7388621076155a7b63afd9c1f7285fd36d81aaa85c20157f15b96c55fb750",
+    "res_gb/locomo_conv-43_session.out.json": "3171ef918cb377147a4c3f7c70ef2c6c5839cb728370bc0ff9bdfc9b4e7c63c9",
+    "res_gb/locomo_conv-44_session.out.json": "e297466329653934306d19dbca5f328ab182eaaab922f2867639560d5c7ead81",
+    "res_gb/locomo_conv-47_session.out.json": "dbf54eeb9995311e038363a40201b39086d65f824249176f6d298d7a19dc2de5",
+    "res_gb/locomo_conv-48_session.out.json": "2c48460dd01d7aa453e965b74e561e7fdfa1a7d9034315ea710b21f9b2ec23c7",
+    "res_gb/locomo_conv-49_session.out.json": "d0f3d587a0b8efd5a6f6eeade58dc0a0c2d8c6c95c48519ff01b04e2a3ece533",
+    "res_gb/locomo_conv-50_session.out.json": "f08e887a66fe096dd041a485650edc7051bcfc2d796e63ec0a8607721d7e122a",
+    "res_gb/locomo_conv-26_dialog.out.json": "24e43e3ae6f71cf2bf290aa79a117796496ec7ca8d15f5522d3a4fc6c612d926",
+    "res_gb/locomo_conv-30_dialog.out.json": "778a6bad7ef839a2152c6662e441ef95d34404cc1b85835053bd4f9f027d760b",
+    "res_gb/locomo_conv-41_dialog.out.json": "f27e31eddd2351b64f86f71d255be6c6063d975ee4051022d7212f972bf3a495",
+    "res_gb/locomo_conv-42_dialog.out.json": "0e6a655b06ea2ef6b0d01e12d6f35b89802bdc7490a5d48efbf03dd31ac7ec4f",
+    "res_gb/locomo_conv-43_dialog.out.json": "d071cf58840eff02fced315150ed435a5ea4f3b74b9b0659c73af6f2a48f9f6a",
+    "res_gb/locomo_conv-44_dialog.out.json": "54c13dd1cdcad34abf2377854d423c7c1777b1d746edfa652665c1e7f938e0ed",
+    "res_gb/locomo_conv-47_dialog.out.json": "40fb97dd88a47f48bff2a1e6fb48526fd10db7ffcfb4228533782394ebb50308",
+    "res_gb/locomo_conv-48_dialog.out.json": "7e6cb0a16aeaee58ca206594be915f8f98e4cd828af8a5edb690915da21afaef",
+    "res_gb/locomo_conv-49_dialog.out.json": "7ab9c8c75973ecceade0599d03df2c82ede8c1708f8883f465d76ff9c4b2b974",
+    "res_gb/locomo_conv-50_dialog.out.json": "639f348f50979f93dba213e62f6393360317d4e5c1a0cd2376d0756997539b3a",
+    "res_mp/locomo_conv-26_session.out.json": "a7b4da370db632010ef079bd8a3e65b4178570ac185855519a4fb0625e789bdb",
+    "res_mp/locomo_conv-30_session.out.json": "8a0f6217f690d96c6050da6cc6778df51411a4087df5e123d35da69dc55fd19f",
+    "res_mp/locomo_conv-41_session.out.json": "60d50b8c38d1db17e3a0739e9d0e11bc09b800792d44ae556fe2e14a0199d6e1",
+    "res_mp/locomo_conv-42_session.out.json": "2ef479abe0d1870b7b22e9768462e5693edbff2faebc144dd98b0a0cfbd00061",
+    "res_mp/locomo_conv-43_session.out.json": "3c22faa118a9982267225680e7f4b87c03eb05820ee2f4ed6e86f97e781f141d",
+    "res_mp/locomo_conv-44_session.out.json": "2c15fc1dc22cad28e1a8697a2633a2578b6f660566ce6fa1a275c3eed0de5b34",
+    "res_mp/locomo_conv-47_session.out.json": "f1676e55f69c0bad5ce545b7fe8b447df62f0c18427252f6175790adaee43970",
+    "res_mp/locomo_conv-48_session.out.json": "bd892d7b51a1fc998e0aeb52f4a599b2ce35ea54481882eec2ad6b727c454fc2",
+    "res_mp/locomo_conv-49_session.out.json": "04ccbb7d7eb9886916e3034614035e46c4c77829e2923d5653b2d68403d3dc6c",
+    "res_mp/locomo_conv-50_session.out.json": "9ff76b313305d198d8f7abb4ac78cc9a7139c22a4da1982e76ded78300597139",
+    "res_mp/locomo_conv-26_dialog.out.json": "f3a6e3cd699f4f98cedd1d74fe911d7e9ef7ed58f660a0580c67faec511b8afc",
+    "res_mp/locomo_conv-30_dialog.out.json": "b6f8d0d46d6544fec7cd7416ddfa5802f6aab36877512744e05c3e186de35369",
+    "res_mp/locomo_conv-41_dialog.out.json": "1c57e1b2f3331a21f71732936a3c74e425c2b380c5c0aae4795c64e41d91be9d",
+    "res_mp/locomo_conv-42_dialog.out.json": "d85b7d75d8e42e5bfa2b45add996da1a5f2a91245ff43d3799ea62fe2bef39aa",
+    "res_mp/locomo_conv-43_dialog.out.json": "7f7f72645c83afdb334f7bea528eb59e8eb48cf6d11ab0cc78b1dbb314df48c8",
+    "res_mp/locomo_conv-44_dialog.out.json": "7f3d41f4f8ed778be5a37ea93912ba30f1eb45de89b1f87d8744db34408718ff",
+    "res_mp/locomo_conv-47_dialog.out.json": "86acaa2006c62856fb9f9b023eba915ef3ccc85550dce360c2338d847b42b3a0",
+    "res_mp/locomo_conv-48_dialog.out.json": "02061306a3665089fcb6ebdf0a396fcfaac93d04cd4b29127cdb594a74d82ef0",
+    "res_mp/locomo_conv-49_dialog.out.json": "430a613ec7c3db91d17446e324c9e094ae0ef4cb023a95af86f743d7f2df28e7",
+    "res_mp/locomo_conv-50_dialog.out.json": "2a3cb94c33e9e3e0a8e42fffa4a35d651cbf584979f898dc6be3375361243a67",
+    "scifact/qrels/test.tsv": "0864bb985e0ca2367ba217977e72004d549054b2b06666ed9d4825ac7c21284c",
+    "scifact/run.jsonl": "c6b580aa9218814e13689776ac54259d2e0ebb064c56fc7831072c7b8a3ebf4a",
+    "res_gb/beir_scifact.out.json": "0fd586ad71d36719ebde597d162c4dca567adc0df8a7084a468356be0549a90a",
+    "res_mp/beir_scifact.out.json": "e35e05ab0c66c7870498d67578909c5dc5cd9d1de8169860ebefe2eaca07b949",
+    "nfcorpus/qrels/test.tsv": "f8fba6ef3d4dd9c3a242a8ba4ae38276fc3622fce7dcbae764766d564542fd2a",
+    "nfcorpus/run.jsonl": "4eb825e3c96d806502bf5e31b97d682acd3fc85d239f2ec738df36a34ad63d60",
+    "res_gb/beir_nfcorpus.out.json": "3a28198cfe27cd4b1b050eda9d96cc2c91368ea61fe5e19729035c5d94239bc3",
+    "res_mp/beir_nfcorpus.out.json": "10743effc2e07ae1640f2a5899a12d8b1a116844d3ff1e8241575a0a23564b24",
+    "mech_v2.json": "23df05dedda276c63f16d6ea6c97b12c4cbc3e3aaf9aaf3d2a6053c526d09993"
+  }
+}

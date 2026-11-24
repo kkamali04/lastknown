@@ -40,9 +40,23 @@ local operation, hybrid search and stale-memory detection are not unique to Last
 - You need demonstrated coding-task improvement or a reliable “no answer” classifier:
   Lastknown's evidence does not establish either.
 
-The [evaluation inventory](EVALUATION.md) includes the broader historical tests and their
-limits. The small agent-memory pilot did not establish an overall winner. Choose on the
-workflow you can verify with your data, not comparisons between incompatible public scores.
+## What was compared experimentally
+
+[Historical retrieval trials](EVALUATION.md#historical-retrieval-comparisons) tested
+MemPalace 3.12.0 and gbrain 0.60.574.0 on common LME/LoCoMo/BEIR protocols. Recall led the
+tested MemPalace setup; gbrain led the 60-question LME subset by one question while Recall
+had higher point scores on LoCoMo and two BEIR corpora. These qualified, historical
+configurations are separate from the workflow comparisons above.
+
+A [private Claude-mem study](EVALUATION.md#private-capture-comparison-claude-mem) used only
+20 headless reviews and unequal retrieval backends. The separate
+[coding-agent pilot](EVALUATION.md#coding-agent-memory-comparison) did not establish an
+overall winner against memory-off, mem0-noinfer, SimpleMem or MemoryOS.
+QMD had a source/feature comparison, not a completed benchmark. There are no measured
+Graphiti/OpenLore/memwarden accuracy comparisons here.
+
+Choose on the workflow you can verify with your data and comparable evidence. None of
+these trials establishes a universal winner or current-product leaderboard.
 
 ## Architecture in brief
 
