@@ -92,7 +92,7 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -r mcp/requirements.txt pytest
       - name: MCP + ingest + installer tests
-        run: python -m pytest ingest mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q
+        run: python -m pytest ingest integrations/claude-code/test_hooks.py mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q
   secrets:
     if: (github.event_name == 'workflow_dispatch' && !inputs.native_candidates) || contains(github.event.pull_request.labels.*.name, 'ci')
     runs-on: ubuntu-latest

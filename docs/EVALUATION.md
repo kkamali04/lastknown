@@ -44,6 +44,8 @@ Aggregate files alone cannot reproduce experiments whose raw inputs are not dist
 
 ## Five-set BEIR audit
 
+![Five BEIR TEST-half nDCG@10 results for keyword, BGE and fused search, on a common zero-to-one scale.](images/retrieval.svg)
+
 Metric: nDCG@10, abstain off. Columns below are the Nov 12 audit's keyword and BGE captures
 and offline reconstruction of the default 0.6 BGE / 0.4 keyword fusion, after per-channel
 min-max normalization.
@@ -140,6 +142,29 @@ Recall 53/60 and MemPalace 45/60. That one-question difference is not an establi
 - Shared VPS load and differing indexing/query work prevent a clean speed ranking.
   Vendor-published Zep/Mem0/Grove/Attemory scores are literature, not additional runs here.
   QMD was researched but was not installed or benchmarked in the retained comparison.
+
+### Relating these trials to MemPalace's published results
+
+The [current MemPalace README](https://github.com/MemPalace/mempalace#benchmarks), checked
+Nov 24, reports raw/hybrid LongMemEval and additional LoCoMo, ConvoMem and MemBench runs.
+Those are vendor-reported experiments, not extra runs performed for Lastknown. In
+particular, its 500-question raw headline must not be ranked against Lastknown's strict
+470-question R_all@5 or official user-turn 419-question result. The tested MemPalace
+3.12.0 full-mode setup also does not stand in for its newer hybrid pipelines.
+
+The same saved outputs support top-ten comparisons within the historical protocols:
+
+| Historical protocol | n | Recall | gbrain local | MemPalace full / adapter |
+|---|---:|---:|---:|---:|
+| LME full-turn, R_all@10 | 470 | 0.9574 | Not captured | 0.8830 |
+| LoCoMo evidence-bearing questions, session R@10 | 1,982 | 0.9419 | 0.8707 | 0.6060 |
+| LoCoMo evidence-bearing questions, turn R@10 | 1,982 | 0.6576 | 0.6152 | 0.4157 |
+
+These use the historical evidence-multiplicity variant, with exact floats retained in
+the aggregate. No result here measures current MemPalace hybrid v4/v5, ConvoMem or the
+ACL MemBench corpus. VibeMemBench is a different coding-task benchmark. A new comparison
+would need locked versions, matched document construction/gold/denominators, full query
+coverage and identical reader/no-reader policy before adding a new leaderboard row.
 
 ## Long-context fusion: BEAM and the eight-set study
 

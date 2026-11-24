@@ -66,7 +66,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -r mcp/requirements.txt pytest
-          python -m pytest ingest mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py scripts/test_ort_package.py scripts/test_bundle_licenses.py bench/scripts/test_beir_compare.py -q
+          python -m pytest ingest integrations/claude-code/test_hooks.py mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py scripts/test_ort_package.py scripts/test_bundle_licenses.py bench/scripts/test_beir_compare.py -q
       - name: Target-specific Rust licenses
         shell: bash
         run: |

@@ -3,7 +3,8 @@
 Run examples from the repository or extracted package root after installation.
 The executable is named `recall`. Source builds use `cargo build --release --locked`; prebuilt installation needs no Rust.
 
-See [installation](PLATFORMS.md#prebuilt-packages), [known limits](LIMITS.md), and [MCP setup](MCP.md).
+See [guided setup and settings](SETUP.md), [installation](PLATFORMS.md#prebuilt-packages),
+[known limits](LIMITS.md), [MCP setup](MCP.md), and [optional capture hooks](HOOKS.md).
 
 ## Build and install from source
 

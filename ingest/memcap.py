@@ -204,10 +204,12 @@ def identity_for(path: Path, projects: Path) -> str | None:
     return "__".join([session, *rest])
 
 
-def inventory(projects: Path) -> tuple[dict[str, Path], dict]:
+def inventory(projects: Path, session_id: str | None = None) -> tuple[dict[str, Path], dict]:
     """identity -> transcript. Same identity in two project dirs = a conflict, never a silent pick."""
     out, conflicts, skipped = {}, set(), 0
-    for pat in ("*/*.jsonl", "*/*/subagents/*.jsonl", "*/*/subagents/workflows/*/*.jsonl"):
+    session = session_id or "*"
+    for pat in (f"*/{session}.jsonl", f"*/{session}/subagents/*.jsonl",
+                f"*/{session}/subagents/workflows/*/*.jsonl"):
         for p in projects.glob(pat):
             ident = identity_for(p, projects)
             if not ident:
@@ -476,8 +478,8 @@ def render_identity(ident: str, tr: dict | None, mem_rows: list, mem_project: st
     return out, stats
 
 
-def part_path(ident: str, day: str, i: int) -> str:
-    return f"{CAPTURE_REL}/{day}/{ident}{'' if i == 1 else f'.p{i}'}.md"
+def part_path(ident: str, day: str, i: int, folder: str = CAPTURE_REL) -> str:
+    return f"{folder}/{day}/{ident}{'' if i == 1 else f'.p{i}'}.md"
 
 
 def split_front(data: bytes) -> tuple[str, str]:
@@ -489,18 +491,18 @@ def split_front(data: bytes) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 # indexing
 # ---------------------------------------------------------------------------
-def stored_form(recall_exe: str, raw: bytes) -> str | None:
+def stored_form(recall_exe: str, raw: bytes, env=None) -> str | None:
     """`recall stored-form`: the text the index stores for these file bytes. None if recall cannot
     answer (old binary, crash): the caller then treats the file as unconfirmed, never as ok."""
     try:
-        r = subprocess.run([recall_exe, "stored-form"], input=raw, capture_output=True, timeout=120)
+        r = subprocess.run([recall_exe, "stored-form"], input=raw, capture_output=True, timeout=120, env=env)
         return r.stdout.decode("utf-8") if r.returncode == 0 else None
     except (OSError, subprocess.SubprocessError, UnicodeDecodeError):
         return None
 
 
-def _stored_matches(recall_exe: str, raw: bytes, body) -> bool:
-    expected = stored_form(recall_exe, raw)
+def _stored_matches(recall_exe: str, raw: bytes, body, env=None) -> bool:
+    expected = stored_form(recall_exe, raw, env)
     return expected is not None and body == expected     # a failed helper (None) never confirms, even a NULL body
 
 
@@ -512,9 +514,10 @@ def index_and_verify(a, vault: Path, journal_path: Path, paths: list[str], owned
     """
     # The journal holds vault-relative paths: recall must resolve them against THIS vault, not its
     # own default (which made every path look absent and "Indexed 0 docs" exit 0, 2026-11-06).
+    recall_env = {**(getattr(a, "recall_env", None) or os.environ), "RECALL_VAULT": str(vault)}
     r = subprocess.run([a.recall_exe, "index", "--path-list", str(journal_path)],
                        capture_output=True, text=True, encoding="utf-8", errors="replace",
-                       env={**os.environ, "RECALL_VAULT": str(vault)})
+                       env=recall_env)
     res = {"recall_exit": r.returncode, "dropped_missing": 0}
     if r.returncode != 0:
         res.update(state="failed: recall index exit", unconfirmed=paths, missing_owned=[])
@@ -536,7 +539,7 @@ def index_and_verify(a, vault: Path, journal_path: Path, paths: list[str], owned
         # With scrub.store_redacted on, recall stores the REDACTED text, so a file holding anything
         # redactable never equals its stored body. Ask recall what it would store for these bytes
         # (the function the indexer ran) instead of re-deriving the redaction.
-        if not row or (row[0] != raw.decode("utf-8") and not _stored_matches(a.recall_exe, raw, row[0])):
+        if not row or (row[0] != raw.decode("utf-8") and not _stored_matches(a.recall_exe, raw, row[0], recall_env)):
             bad.append(p)
     con.close()
     ok = not bad and not res["dropped_missing"]
@@ -603,7 +606,7 @@ def run(a) -> int:
 
     vault, projects, state_dir = Path(a.vault), Path(a.projects), Path(a.state_dir)
     out_root = Path(a.out) if a.dry_run else vault
-    capture_root = out_root / CAPTURE_REL
+    capture_root = out_root / a.capture_rel
     work_dir = Path(a.out) if a.dry_run else state_dir      # dry runs never touch production state
     health = {"last_attempt": dt.datetime.now(dt.timezone.utc).isoformat(), "dry_run": a.dry_run}
 
@@ -689,10 +692,11 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
         # at 02:45 local) and out of any nightly run that is still going.
         if (2, 15) <= (now.hour, now.minute) < (3, 45):
             return 0, {"skipped": "nightly index window (02:15-03:45)"}
-        q = subprocess.run(["schtasks", "/query", "/tn", NIGHTLY_TASK, "/fo", "csv", "/nh"],
-                           capture_output=True, text=True, errors="replace")
-        if q.returncode == 0 and '"Running"' in q.stdout:
-            return 0, {"skipped": f"{NIGHTLY_TASK} is running"}
+        if os.name == "nt":
+            q = subprocess.run(["schtasks", "/query", "/tn", NIGHTLY_TASK, "/fo", "csv", "/nh"],
+                               capture_output=True, text=True, errors="replace")
+            if q.returncode == 0 and '"Running"' in q.stdout:
+                return 0, {"skipped": f"{NIGHTLY_TASK} is running"}
     load_note = None
     if not a.dry_run and a.load_status:
         try:      # written by the machine's load monitor
@@ -738,7 +742,7 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
         for rel in set(owned.get(ident, [])) - keep:
             journal.discard(rel)
             dest = out_root / rel
-            if rel.startswith(CAPTURE_REL + "/") and under(dest, root_real) and dest.exists():
+            if rel.startswith(a.capture_rel + "/") and under(dest, root_real) and dest.exists():
                 try:
                     dest.unlink()
                     stats["parts_deleted"] += 1
@@ -757,8 +761,10 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
             stats["groups_withdrawn"] += 1
 
     # --- what changed ---
-    inv, inv_report = inventory(projects)
-    mem = read_mem(Path(a.mem_db))
+    inv, inv_report = inventory(projects, a.session_id)
+    mem = ({"state": "missing", "fingerprints": {}, "rows": {}, "projects": {},
+            "unmatched": 0, "error": "", "db_id": ""}
+           if a.no_claude_mem else read_mem(Path(a.mem_db)))
     if mem["db_id"] and state.get("mem_db_id") not in (None, mem["db_id"]):
         fps_st.clear()                                    # DB migrated: re-check every session
     changed = [i for i, p in inv.items() if files_st.get(i) != [p.stat().st_size, p.stat().st_mtime_ns]
@@ -835,7 +841,7 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
                 stats["quarantined"].append(f"{ident}: gate {bad}")
                 withdraw(ident, set())           # a group failing the gate must not stay searchable
                 continue
-            produced = [part_path(ident, day, i) for day, parts in by_day.items()
+            produced = [part_path(ident, day, i, a.capture_rel) for day, parts in by_day.items()
                         for i in range(1, len(parts) + 1)]
             for rel in produced:
                 if not under(out_root / rel, root_real):
@@ -848,7 +854,7 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
                 checkpoint()
             for day, parts in by_day.items():
                 for i, data in enumerate(parts, 1):
-                    dest = out_root / part_path(ident, day, i)
+                    dest = out_root / part_path(ident, day, i, a.capture_rel)
                     if dest.exists() and dest.read_bytes() == data:
                         stats["parts_unchanged"] += 1
                     else:
@@ -890,6 +896,8 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
     if (stats["quarantined"] or stats["errors"] or stats["incomplete"] or stats["groups_frozen"]
             or mem["state"] not in ("ok", "missing") or inv_report["conflicts"]):
         code = 3
+    if a.session_id and stats["groups_deferred"]:
+        code = 3                          # a one-shot session hook must expose unfinished work
     state["mem_db_id"] = mem["db_id"] or state.get("mem_db_id")
     checkpoint()
     if load_note:
@@ -901,7 +909,7 @@ def run_locked(a, scrub_turns, extract_transcript, scrub_text, vault, projects, 
                       unmatched_db_rows=mem["unmatched"], index=index, **stats)
 
 
-def main(argv=None) -> int:
+def main(argv=None, *, recall_env=None) -> int:
     for s in (sys.stdout, sys.stderr):
         try:
             s.reconfigure(encoding="utf-8")
@@ -913,6 +921,10 @@ def main(argv=None) -> int:
     ap.add_argument("--vault", default=str(vault))
     ap.add_argument("--projects", default=str(config / "projects"))
     ap.add_argument("--mem-db", default=str(HOME / ".claude-mem" / "claude-mem.db"))
+    ap.add_argument("--no-claude-mem", action="store_true", help="do not read a Claude-mem database")
+    ap.add_argument("--capture-rel", type=capture_rel, default=CAPTURE_REL,
+                    help="capture folder inside the vault; use separate state when changing it")
+    ap.add_argument("--session-id", help="capture only this session UUID and its subagents; requires --no-claude-mem and a session-specific --state-dir")
     ap.add_argument("--state-dir", default=str(HOME / ".recall"))
     ap.add_argument("--recall-exe", default=os.environ.get("RECALL_EXE") or "recall")
     ap.add_argument("--recall-db", default=str(HOME / ".recall" / "recall.db"))
@@ -929,6 +941,12 @@ def main(argv=None) -> int:
     ap.add_argument("--alert-cmd", default=os.environ.get("RECALL_ALERT_CMD", ""),
                     help="dashboard poster for failures ('' = off)")
     a = ap.parse_args(argv)
+    a.recall_env = dict(recall_env) if recall_env is not None else None
+    if a.session_id:
+        if not UUID_RE.fullmatch(a.session_id):
+            ap.error("--session-id must be a canonical lowercase session UUID")
+        if not a.no_claude_mem or Path(a.state_dir).name != a.session_id:
+            ap.error("--session-id requires --no-claude-mem and a --state-dir ending with that UUID")
     if a.dry_run and not a.out:
         ap.error("--dry-run needs --out")
     return run(a)

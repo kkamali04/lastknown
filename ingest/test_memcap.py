@@ -484,13 +484,14 @@ def test_claude_mem_section_is_labelled_unverified(tmp_path):
     assert "claude-mem AI summary — unverified, may contain errors" in main
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows Scheduled Tasks guard")
 def test_skips_while_nightly_index_runs(tmp_path, monkeypatch):
     env = make_env(tmp_path)
     real = subprocess.run
 
     def fake(cmd, *a, **k):
         if cmd and cmd[0] == "schtasks":
-            return subprocess.CompletedProcess(cmd, 0, '"\Recall-Nightly-Index","x","Running"\n', "")
+            return subprocess.CompletedProcess(cmd, 0, '"\\Recall-Nightly-Index","x","Running"\n', "")
         return real(cmd, *a, **k)
     monkeypatch.setattr(memcap.subprocess, "run", fake)
     monkeypatch.setattr(memcap.dt, "datetime", type("D", (memcap.dt.datetime,), {
@@ -509,3 +510,55 @@ def test_capture_rel_stays_inside_the_vault():
     for bad in ("C:/elsewhere", "/abs/path", "../up", "a/../../b", "\\\\server\\share"):
         with pytest.raises(ValueError):
             memcap.capture_rel(bad)
+
+
+def test_session_scope_excludes_other_sessions_and_claude_mem(tmp_path, monkeypatch):
+    env = make_env(tmp_path)
+    other = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    (env["projects"] / "C--work" / f"{other}.jsonl").write_text(
+        rec("user", "OTHER_SESSION_MUST_NOT_BE_CAPTURED") + "\n", encoding="utf-8")
+    monkeypatch.setattr(memcap, "read_mem", lambda *a: pytest.fail("Claude-mem must not be opened"))
+    scoped = env["state"] / SID
+    assert run(env, "--session-id", SID, "--no-claude-mem", "--state-dir", str(scoped),
+               "--capture-rel", ".memory-capture/claude-code") == 0
+    blob = "".join(p.read_text(encoding="utf-8") for p in notes(env))
+    assert "SUBAGENT_REPORT" in blob and "DECISION: use LRU" in blob
+    assert "OTHER_SESSION_MUST_NOT_BE_CAPTURED" not in blob and "OBS_TITLE" not in blob
+    assert (scoped / "memcap-health.json").is_file()
+    assert all(p.is_relative_to(env["vault"] / ".memory-capture" / "claude-code") for p in notes(env))
+
+
+def test_session_scope_requires_uuid_and_separate_state(tmp_path):
+    env = make_env(tmp_path)
+    for extra in (("--session-id", "../escape", "--no-claude-mem"),
+                  ("--session-id", SID), ("--session-id", SID, "--no-claude-mem")):
+        with pytest.raises(SystemExit) as e:
+            run(env, *extra)
+        assert e.value.code == 2
+    assert not env["state"].exists() and not notes(env)
+
+
+def test_one_shot_session_deferral_is_partial_not_success(tmp_path):
+    env = make_env(tmp_path)
+    scoped = env["state"] / SID
+    assert run(env, "--session-id", SID, "--no-claude-mem", "--state-dir", str(scoped),
+               "--max-bytes", "1") == 3
+    health = json.loads((scoped / "memcap-health.json").read_text())
+    assert health["groups_deferred"] > 0 and health["pending_bytes"] > 0
+    assert health["last_success"] is None
+    assert run(env, "--session-id", SID, "--no-claude-mem", "--state-dir", str(scoped)) == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="non-Windows portability regression")
+def test_no_windows_scheduler_call_on_unix(tmp_path, monkeypatch):
+    env = make_env(tmp_path)
+    real = subprocess.run
+    def reject_schtasks(cmd, *a, **kw):
+        assert cmd[0] != "schtasks"
+        return real(cmd, *a, **kw)
+    monkeypatch.setattr(memcap.subprocess, "run", reject_schtasks)
+    monkeypatch.setattr(memcap.dt, "datetime", type("D", (memcap.dt.datetime,), {
+        "now": classmethod(lambda c, tz=None: memcap.dt.datetime(2026, 11, 2, 12, 0, tzinfo=tz))}))
+    assert memcap.main(["--vault", str(env["vault"]), "--projects", str(env["projects"]),
+                       "--mem-db", str(env["db"]), "--state-dir", str(env["state"]),
+                       "--recall-exe", str(env["exe"]), "--recall-db", str(env["recall_db"])]) == 0

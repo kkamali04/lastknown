@@ -1,7 +1,7 @@
 # Contributing (lite)
 
 - Build: `cargo build --release` (default features only: free, offline channels `fts5` + `bge`).
-- Test: `cargo test --release`; Python: `python -m pip install -r mcp/requirements.txt pytest && python -m pytest ingest mcp/test_recall_mcp.py`.
+- Test: `cargo test --release`; Python: `python -m pip install -r mcp/requirements.txt pytest && python -m pytest ingest integrations/claude-code/test_hooks.py mcp/test_recall_mcp.py`.
 - Keep the **safe-invocation contract** for every caller that spawns `recall`: flags first, then `--`,
   then exactly one positional (`recall query --top 8 --json -- "<text>"`). A user string that equals a
   flag name must never be parsed as that flag.

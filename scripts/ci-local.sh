@@ -63,7 +63,7 @@ smoke() { sh scripts/install.sh --vault "$HOME/notes" && python3 scripts/clean_i
 step build  nice -n 19 cargo build --release -j "$JOBS"
 step test   nice -n 19 cargo test --release -j "$JOBS" -- --test-threads=2
 step ops    nice -n 19 cargo test --release -j "$JOBS" --features ops-health -- --test-threads=2
-step pytest "$PY" -m pytest ingest mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q
+step pytest "$PY" -m pytest ingest integrations/claude-code/test_hooks.py mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q
 step scrub  "$PY" -I scripts/scrub_e2e.py "$CARGO_TARGET_DIR/release/recall"
 step smoke  smoke
 step demo   sh examples/stale-demo/run.sh "$CARGO_TARGET_DIR/release/recall"

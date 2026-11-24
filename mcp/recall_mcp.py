@@ -1,9 +1,7 @@
 """Recall MCP Server — minimal, portable, read-only.
 
-Four tools over a local `recall` index (search, semantic search, recent, health).
-This is THE recall MCP server. Deliberately NOT the large `server.py` next door:
-that one is a separate mail-oriented server with machine-specific paths, and it
-does not follow the safe-argv rule below.
+Five tools over a local `recall` index: search, semantic search, recent, identity and health.
+This is the supported portable stdio server.
 
 Design rules, each earned the hard way on this stack:
 
@@ -16,8 +14,8 @@ Design rules, each earned the hard way on this stack:
     look identical from outside; that ambiguity has cost days here.
   * READ-ONLY — no index, no embed, no gc, no save-to-store. Indexing is a
     vault-owner operation, not something a reading agent does.
-  * TRUST `rank`, NEVER `score` — score is an RRF value, not a similarity,
-    and it is not comparable across channels.
+  * TRUST `rank`, NEVER `score` — fused scores are not calibrated confidence
+    and are not comparable across channels or queries.
   * TENANCY — no tool takes an agent, project or scope argument. The boxes this
     server sees come only from the RECALL_AGENT / RECALL_PROJECT / RECALL_TEAM
     env it was launched with, inherited by every `recall` subprocess.

@@ -60,7 +60,7 @@ try {
         Step build  { cargo build --release -j 4 }
         Step test   { cargo test --release -j 4 -- --test-threads=2 }
         Step ops    { cargo test --release -j 4 --features ops-health -- --test-threads=2 }
-        Step pytest { & $py -m pytest ingest mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q }
+        Step pytest { & $py -m pytest ingest integrations/claude-code/test_hooks.py mcp/test_recall_mcp.py scripts/test_install_deps.py scripts/test_clean_install_smoke.py -q }
         Step scrub  { & $py -I scripts/scrub_e2e.py $Exe }
         Step smoke  {
             powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 -Vault (Join-Path $Home2 'notes')

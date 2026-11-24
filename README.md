@@ -1,85 +1,64 @@
-![lastknown — Local memory that checks its sources. A retrieved passage is linked to its source note, with changed lines highlighted.](docs/images/lastknown-hero.png)
-
-<p align="center">Find the right note. See whether the passage changed.</p>
+![lastknown — Local memory that checks its sources.](docs/images/lastknown-hero.png)
 
 <p align="center">
-  <a href="https://github.com/kkamali04/lastknown/releases/tag/v0.1.0-alpha.1">Download the alpha</a> ·
-  <a href="docs/TRY-IT.md">Try the demo</a> ·
-  <a href="docs/MCP.md">Connect an agent</a> ·
-  <a href="docs/EVALUATION.md">Read the evidence</a>
-</p>
-<p align="center">
-  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-377d69"></a>
-  <a href="https://github.com/kkamali04/lastknown/releases/tag/v0.1.0-alpha.1"><img alt="Public alpha v0.1.0-alpha.1" src="https://img.shields.io/badge/release-v0.1.0--alpha.1-425a71"></a>
+  <a href="INSTALL_FOR_AGENTS.md">Set up with an agent</a> ·
+  <a href="docs/SETUP.md">Install yourself</a> ·
+  <a href="docs/EVALUATION.md">Benchmarks</a> ·
+  <a href="LICENSE">Apache 2.0</a>
 </p>
 
-Lastknown gives you and your coding agents a searchable memory of your Markdown notes.
-It combines keyword and local semantic search, returns the source file, and checks whether
-the retrieved passage still matches that file. Use it from a terminal, an MCP client, or
-a local browser interface.
+Lastknown gives you and your agents a searchable memory of your Markdown notes and saved
+decisions. Search by words or meaning, get the source passage, and see whether its lines
+changed since indexing. Use the same local index through the **CLI, MCP or browser UI**.
 
-**Runs on your machine.** Default search needs no LLM, provider API key, or graph database.
-Your existing notes remain the source of truth; the search index lives in local SQLite.
-The executable is still named `recall`.
+## Why Lastknown?
 
-## Why use it?
+- **Check the source before relying on memory.** Distinguish a changed passage from a
+  file edited elsewhere. Deleted sources and unchecked freshness are visible too.
+- **Keep your notes as the source of truth.** Index existing `.md`/`.qmd` files, save
+  observations from the CLI, or opt into Claude Code session capture. No mandatory LLM
+  summarization step.
+- **Run retrieval locally.** SQLite FTS5 + BGE-small through ONNX, with incremental
+  indexing/embedding, pattern-based redaction and an optional warm daemon. No provider key
+  or graph service for default search; offline after initial setup downloads.
+- **Connect the whole workflow.** Five read-only MCP tools, a reusable agent skill,
+  optional Claude Code hooks and a settings UI. Writes remain explicit CLI/capture actions.
 
-- **Catch outdated context.** A result can distinguish an unchanged file, an edited file
-  whose excerpt is still current, and an excerpt whose source lines changed.
-- **Search by words and meaning.** SQLite FTS5 handles exact terms; BGE-small runs locally
-  through ONNX Runtime. Their scores are combined into one ranked list.
-- **Give agents access to evidence.** Read-only MCP tools expose search, recent memories,
-  identity and health. Search text is passed as data, and failed backends report errors.
-- **Keep the index maintainable.** Refresh changed notes and embeddings, inspect status,
-  and apply pattern-based redaction to stored text and output.
-
-The [portable demo](examples/stale-demo) changes a source note from port `8080` to `9090`,
-shows the old excerpt as stale, then reindexes and retrieves the update. Freshness checks
-source text; it does not establish factual truth. Changes confined to a redacted value
-can be missed. [How freshness works →](docs/FRESHNESS.md)
+**The distinguishing focus is source-file and passage drift**, combined with a notes-first
+local workflow. MemPalace also preserves verbatim history; Claude-mem emphasizes generated
+observations; gbrain connects a broader personal/team brain; QMD offers multi-collection
+search with local LLM reranking. These overlap with Lastknown: local operation and hybrid
+search are established approaches. [Compare the workflows and tested results →](docs/CHOOSING.md)
 
 ## Get started
 
-Download and extract **the entire archive** for your platform:
+Give your coding agent this prompt:
+
+> Set up https://github.com/kkamali04/lastknown for me. Read INSTALL_FOR_AGENTS.md and the
+> bundled Lastknown skill. Walk me through the notes folder, client connection, settings
+> and optional capture hooks, then verify search and MCP. Use a prebuilt release.
+
+The repo includes [the skill](skills/lastknown/SKILL.md), [setup walkthrough](docs/SETUP.md),
+[MCP instructions](docs/MCP.md) and [hook code/configuration](docs/HOOKS.md). Reading the
+skill does not install or enable anything by itself.
+
+### Manual installation
+
+Download and extract **the entire archive**. Requires Python 3.10+ with venv, ripgrep and
+internet for pinned runtime/model and MCP dependencies. Rust is unnecessary.
 
 | Windows x64 | Linux x64 | Linux ARM64 | macOS Apple Silicon |
 |---|---|---|---|
 | [ZIP](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/lastknown-windows-x64.zip) | [tar.gz](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/lastknown-linux-x64.tar.gz) | [tar.gz](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/lastknown-linux-arm64.tar.gz) | [tar.gz](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/lastknown-macos-arm64.tar.gz) |
 
-All four passed [native build and fresh-install checks](https://github.com/kkamali04/lastknown/actions/runs/45003961345).
-Linux was tested on Ubuntu 24.04; macOS on macOS 15. Intel Mac and other targets are not validated.
-[Platform details and checksums →](docs/PLATFORMS.md)
-
-### Try it before installing
-
-From the extracted folder, in a new PowerShell window, with ripgrep (`rg`) on PATH:
-
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\examples\stale-demo\run.ps1 -Bin .\prebuilt\release\recall.exe
-```
-
-On Linux/macOS:
-
-```sh
-sh examples/stale-demo/run.sh "$PWD/prebuilt/release/recall"
-```
-
-Expect **`stale-demo: PASS`**. It uses temporary notes and a temporary profile; it needs no
-Rust compiler, Python, or model download. [Full installer/BGE/MCP acceptance check →](docs/TRY-IT.md)
-
-### Use your notes
-
-Prebuilt installation needs Python 3.10+ with venv, ripgrep, and internet access for the
-pinned model/runtime and MCP dependencies. Rust is unnecessary.
-
-```powershell
-# Windows — from the extracted archive
+# Windows — from the extracted package
 powershell -ExecutionPolicy Bypass -File .\Install-Lastknown.ps1 -Vault "$HOME\notes"
 . "$HOME\.recall\env.ps1"
 ```
 
 ```sh
-# Linux / macOS — from the extracted archive
+# Linux / macOS — from the extracted package
 sh ./Install-Lastknown.sh --vault "$HOME/notes"
 . "$HOME/.recall/env.sh"
 ```
@@ -89,129 +68,61 @@ Then:
 ```sh
 recall index
 recall embed
-recall query --top 5 -- "how do we deploy the API?"
+recall query --top 5 -- "why did we choose this cache?"
+recall save -- "We chose an LRU cache for bounded memory use."
+recall embed
+recall refresh
 recall ui
 ```
 
-Normal installation writes your `.recall` profile. The default query and embedding paths
-work offline after setup. An optional Haiku judge can send passages through your Claude CLI;
-it is **off by default**. [Privacy and redaction →](docs/SCRUB.md)
+The executable remains named `recall`. [Try the isolated freshness demo first →](docs/TRY-IT.md)
+All four packages passed [native acceptance](https://github.com/kkamali04/lastknown/actions/runs/45003961345).
+[Platform requirements and checksums →](docs/PLATFORMS.md)
 
-## For coding agents
+### Connect an agent
 
-Use the same index from Claude Code, Codex, Cursor, Claude Desktop or another MCP client.
+| Component | What it provides | Setup |
+|---|---|---|
+| MCP: Claude Code, Codex, Cursor, Claude Desktop and other stdio clients | Search, semantic search, recent memories, identity and health | [MCP](docs/MCP.md) |
+| Lastknown skill | Search-before-answer, source checks, explicit save/refresh workflow | [Bundled skill](skills/lastknown/SKILL.md) |
+| Claude Code hooks, opt-in | Startup availability context; session-end capture into private notes | [Hooks](docs/HOOKS.md) |
+| CLI / local browser UI | Save, index, embed, refresh, settings and diagnostics | [CLI](docs/CLI.md) / [settings walkthrough](docs/SETUP.md#choose-your-settings) |
 
-| Tool | Purpose |
-|---|---|
-| `recall_search` | Hybrid search with source paths and freshness fields |
-| `recall_search_semantic` | Search by meaning |
-| `recall_recent` | Recent saved observations |
-| `recall_whoami` / `recall_health` | Identity, scope and backend diagnostics |
+The **new skill/hooks live in this repo**; the existing alpha archives contain the earlier
+runtime. Keep a checkout for these integrations. Capture is off until configured, supports
+Claude Code transcripts only, and needs a separate embedding pass for semantic retrieval.
 
-The MCP server is read-only. Indexing, embedding and saving remain separate CLI actions.
-[Client setup and tool contract →](docs/MCP.md)
+## What the tests show
 
-## What the benchmarks show
+Historical Nov 5–6 **retrieval comparisons**, rescored from saved outputs Nov 23.
+These are the tested versions/configurations, not current-product rankings or answer accuracy.
 
-These are **retrieval measurements**, not generated-answer accuracy. The table compares
-channels on the same questions; each row has its own metric.
-
-| Conversation retrieval, measured Nov 13 | Questions | Keyword | BGE | Fused |
-|---|---:|---:|---:|---:|
-| LongMemEval_S — all evidence sessions in the top 5 | 419 | 0.866 | 0.883 | **0.921** |
-| LoCoMo — session recall@5, TEST half | 1,036 | 0.858 | 0.726 | **0.878** |
-| LoCoMo — turn recall@5, categories 1–4, TEST half | 784 | 0.466 | 0.496 | **0.577** |
-
-On LongMemEval, fused search found every required evidence session in the top five for
-**386 of 419 questions**. The same-subset BM25 reference scored 0.742. That LongMemEval
-result is **not held out**: some questions had been involved in selecting the fusion weight.
-
-The broader BEIR audit tested five document-search datasets:
-
-![BEIR TEST-half nDCG@10 for keyword, BGE and fused search. The chart uses a common zero-to-one axis and labels all three channels.](docs/images/retrieval.svg)
-
-<details>
-<summary>Numbers, baseline gains and qualifications</summary>
-
-| Dataset | Keyword | BGE | Fused | Gain over keyword, points [95% CI] |
-|---|---:|---:|---:|---|
-| SciFact | 0.679 | 0.688 | **0.727** | +4.85 [1.29, 8.62] |
-| NFCorpus | 0.304 | 0.320 | **0.342** | +3.80 [1.67, 6.12] |
-| FiQA | 0.254 | 0.413 | **0.416** | +16.24 [13.34, 19.21] |
-| SciDocs | 0.164 | 0.198 | **0.202** | +3.82 [2.81, 4.85] |
-| ArguAna | 0.502 | 0.532 | **0.566** | +6.43 [4.36, 8.48] |
-
-The Nov 12 audit recomputed convex fusion over captured channel rankings. Binary-capture
-scores differ slightly on NFCorpus and ArguAna; both are retained in the
-[aggregate snapshot](bench/evidence/public-results.json). Four TEST halves were not fully
-unseen when the fusion weight was selected. Several stores used an older indexing build.
-These are historical results, not five new runs of the alpha.
-
-**0.727 is a ranking-quality score, not a 72.7% improvement.** On SciFact the gain over
-keyword search is 4.85 points on a 100-point nDCG scale. On FiQA, BGE alone supplies most of
-the gain over keywords; fusion adds little over BGE. Hybrid retrieval uses standard methods.
-
-</details>
-
-**Latest regression check, Nov 22:** a new SciFact store covered all 5,183 documents and 300
-questions. Both the fresh run and the exact released Linux binary reproduced all 900
-query/channel ranked lists from Nov 13, with no failures. [Raw public-ID runs and provenance →](https://github.com/kkamali04/lastknown/releases/download/v0.1.0-alpha.1/scifact-baseline-20261122.zip)
-
-### Comparisons with other memory systems
-
-The research also ran **direct retrieval comparisons**. These are historical Nov 5–6
-configurations, rescored from saved rankings on Nov 23; they are not new alpha runs or
-measurements of today's competitor releases.
-
-| Historical protocol | Questions | Recall | gbrain local | MemPalace |
+| Same-protocol test | n | Recall | gbrain local | MemPalace full / adapter |
 |---|---:|---:|---:|---:|
 | LongMemEval_S full-turn, all evidence sessions in top 5 | 470 | **0.887** | Not run | 0.774 |
-| LongMemEval_S matched subset, same metric | 60 | 0.883 | **0.900** | 0.750 |
+| Matched LongMemEval subset, same metric | 60 | 0.883 | **0.900** | 0.750 |
 | LoCoMo evidence-bearing questions, session recall@5 | 1,982 | **0.850** | 0.766 | 0.454 |
-| SciFact, full-set nDCG@10 | 300 | **0.734** | 0.698 | 0.650 |
-| NFCorpus, full-set nDCG@10 | 323 | **0.362** | 0.350 | 0.314 |
+| SciFact full-set nDCG@10 | 300 | **0.734** | 0.698 | 0.650 |
+| NFCorpus full-set nDCG@10 | 323 | **0.362** | 0.350 | 0.314 |
 
-Recall retrieved every required session for **417/470** LongMemEval questions versus
-**364/470** for the tested MemPalace full-mode setup. gbrain's local setup led the matched
-60-question subset by one question. MemPalace used MiniLM/Chroma; gbrain used local
-nomic/PGLite with reranking off. LoCoMo and BEIR used adapters. Builds, embeddings and
-document construction differ from other published scores.
-[Configurations, exact figures and qualifications →](docs/EVALUATION.md#historical-retrieval-comparisons)
+That is **417/470 versus 364/470** on strict LongMemEval evidence coverage; gbrain led the
+60-question subset by one question. MemPalace used 3.12.0/MiniLM/Chroma; gbrain used
+0.60.574.0/local nomic/PGLite with reranking off. Recall build labels had provenance limits.
+**MemPalace's headline raw/hybrid configurations were not tested here.**
 
-Other completed studies include **BEAM 100K/500K** long-context retrieval, a private
-**Claude-mem capture comparison**, summary/recency/reranker experiments and
-duplicate/multi-topic stress tests. On BEAM 500K, score fusion improved derived recall@5
-from **0.312 to 0.344** over RRF; that is retrieval, not BEAM answer accuracy.
+Other studies include the official 419-question LongMemEval protocol (**386/419**), five
+BEIR sets, LoCoMo TEST splits, BEAM 100K/500K, a private Claude-mem capture comparison and
+summary/recency/reranker controls. The coding-agent pilot found **7/19 with Recall and
+7/19 with memory off**. Only SciFact was rerun for the alpha: all **900 query/channel
+ranked lists** matched the Nov 13 baseline, including a replay with the released Linux binary.
+[Full results, negative findings, configurations and reproducibility limits →](docs/EVALUATION.md)
 
-The separate coding-agent pilot remains inconclusive: Lastknown and memory-off both
-solved **7/19** tasks. Retrieval advantages do not establish better coding outcomes.
-[Full evaluation inventory, positive and negative results →](docs/EVALUATION.md)
+## Status
 
-## Is it the right memory system for you?
+**Public alpha.** One notes folder; no hosted service. Freshness checks source text, not
+factual truth, and changes confined to redacted values can be missed. The optional cloud
+answerability judge stays off. [Known limits](docs/LIMITS.md) · [Privacy](docs/SCRUB.md) ·
+[Source build](docs/CLI.md#build-and-install-from-source) · [Contributing](CONTRIBUTING.md)
 
-Choose Lastknown when you already maintain Markdown notes and want local search with
-visible source-file drift, accessible from a terminal and your agents.
-
-For multi-collection search with local LLM reranking, consider [QMD](https://github.com/tobi/qmd).
-For application memory extraction and managed services, look at [Mem0](https://github.com/mem0ai/mem0).
-For temporal entity/relationship graphs, look at [Graphiti](https://github.com/getzep/graphiti).
-Source-anchored coding memory also exists in [OpenLore](https://github.com/clay-good/OpenLore)
-and [memwarden](https://github.com/saiyam1814/memwarden).
-
-Those are different design choices. The results above do not establish that Lastknown
-outperforms those products. [Compare the intended workflows →](docs/CHOOSING.md)
-
-## Status and documentation
-
-**Public alpha.** One Markdown/QMD notes folder is supported. Answerability, redacted-value
-freshness and some CLI input/exit-code behavior have known limits. Desktop browser launch,
-autostart and agent registration still need checks on your intended computer.
-
-[CLI reference](docs/CLI.md) · [Known limits](docs/LIMITS.md) ·
-[Build from source](docs/CLI.md#build-and-install-from-source) ·
-[Freshness](docs/FRESHNESS.md) · [MCP](docs/MCP.md) ·
-[Benchmark protocol](docs/BENCHMARKS.md) · [Run benchmarks](bench/README.md) ·
-[Contributing / build checks](CONTRIBUTING.md)
-
-Licensed under [Apache 2.0](LICENSE). Dependencies retain their licenses;
-see [third-party notices](THIRD_PARTY_NOTICES.md).
+[Apache 2.0](LICENSE) for Lastknown's source; dependencies retain their
+[third-party licenses](THIRD_PARTY_NOTICES.md).

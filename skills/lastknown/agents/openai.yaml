@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lastknown"
+  short_description: "Set up and use source-checked local memory"
+  default_prompt: "Use $lastknown to set up or search my local project memory."
